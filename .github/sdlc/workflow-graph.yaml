@@ -1,0 +1,268 @@
+# Agentic SDLC Orchestrator — Workflow Graph
+# Explicit dependency graph (DAG) driving orchestration.
+# Realizes spec sections S1 (execution model), S2 (gates), S3 (approval trigger),
+# and v2 addendum sections 2 (handoff), 3 (units), 4 (templates), 5/6 (rules/standards),
+# 7 (hybrid policy gates), 8 (durable approval), 9 (traceability), 10 (graph extensions),
+# 11 (doc layout), 12 (metrics).
+#
+# Semantics (v1):
+#   phase:        inception (single-threaded, human-gated) | construction (multi-agent, concurrent)
+#   depends_on:   node ids that must reach `passed` exit gate before this node may start
+#   parallel:     true => may run concurrently with siblings sharing the same depends_on set
+#   entry_gate/exit_gate:
+#       approval:  none | required          (human approval)
+#       policy:    list of policy checks to run (see .github/hooks/scripts/gate-check.sh)
+#   branch:       optional conditional edges { when: <predicate>, goto: <node id> }
+#   high_impact:  when true, action is agent-classified core-feature/critical-design =>
+#                 always requires durable human confirmation regardless of phase (S3, v2 §8)
+#
+# Semantics (v2 — per node):
+#   agent:               owning subagent for the node
+#   templates:           template ids (in .github/sdlc/templates/) every artifact must declare (§4)
+#   standards:           standard ids (in .github/sdlc/rules/standards/) enforced at the gate (§6)
+#   input_artifacts:     artifacts consumed from upstream handoffs (§2)
+#   output_artifacts:    artifacts this node must produce for `status: passed` (§2)
+#   handoff:             durable handoff artifact contract (§2)
+#   policy_evidence_path: where the hybrid policy gate stores objective evidence (§7)
+#
+# Semantics (v2 — construction unit nodes):
+#   unit_scope: decomposed
+#   unit_registry: path to the approved unit registry (§3)
+#   parallelism: by_independent_unit  (units run concurrently only when deps satisfied + no file conflict)
+
+version: 2
+
+failure_policy:
+  retry_limit: 3
+  fallback_target: last_approved_stage
+  rollback_target: last_approved_stage
+  safe_stop_target: last_approved_stage
+  replan: human_decision            # S5
+  parallel_conflict: human_decision # S6
+  policy_error: block               # v2 §7 — `error` treated as `block` unless human authorizes
+
+persistence:
+  state_file: sdlc-docs/state.md
+  audit_log: sdlc-docs/audit-log.md
+  audit_mode: append_only           # S8
+  handoffs_dir: sdlc-docs/handoffs           # v2 §2
+  approvals_dir: sdlc-docs/approvals         # v2 §8
+  policy_evidence_dir: sdlc-docs/policy-evidence  # v2 §7
+  unit_registry: sdlc-docs/construction/units/unit-registry.yaml  # v2 §3
+
+# v2 §5/§6 — rules loaded at workflow start and standards always enforced.
+rules:
+  root: .github/sdlc/rules
+  always_load:                      # common rules loaded at workflow start (§5)
+    - common/process-overview.md
+    - common/session-continuity.md
+    - common/content-validation.md
+    - common/question-format-guide.md
+  standards:                        # always-enforced standards (§6)
+    - standards/coding-standard.md
+    - standards/security-standard.md
+    - standards/testing-standard.md
+    - standards/documentation-standard.md
+    - standards/code-review-standard.md
+    - standards/release-readiness-standard.md
+  extensions_dir: .github/sdlc/rules/extensions   # opt-in via <rule-name>.opt-in.md (§5)
+
+# v2 §4 — mandatory template registry (existence validated by graph-validate.sh).
+templates_root: .github/sdlc/templates
+
+# v2 §9 — traceability id prefixes.
+traceability:
+  prefixes:
+    requirement: REQ-
+    architecture_decision: ADR-
+    unit: UNIT-
+    plan: PLAN-
+    test: TEST-
+    documentation: DOC-
+    security: SEC-
+    code_review: CR-
+    release_readiness: REL-
+
+# v2 §3 — construction unit execution + conflict handling.
+construction:
+  unit_registry: sdlc-docs/construction/units/unit-registry.yaml
+  parallelism: by_independent_unit
+  unit_loop:                        # ordered per-unit execution loop (§3)
+    - functional-design            # when required
+    - nfr-requirements             # when required
+    - nfr-design                   # when nfr-requirements present
+    - infrastructure-design        # when infrastructure changes present
+    - code-generation-plan
+    - implementation
+    - unit-tests
+    - unit-documentation
+    - unit-code-review
+    - unit-handoff
+  conflict_rule:                    # §3 — join safety
+    target_file_overlap: block      # units sharing target_files may not run in parallel
+    missing_required_tests: block
+    stale_traceability_refs: block
+    resolution: human_decision
+
+nodes:
+  # ---------------- INCEPTION (single-threaded, human-gated) ----------------
+  - id: requirements
+    phase: inception
+    agent: inception
+    parallel: false
+    depends_on: []
+    templates: [requirements-template.md, user-story-template.md]
+    standards: [documentation-standard]
+    input_artifacts: []
+    output_artifacts:
+      - sdlc-docs/inception/requirements/requirements.md
+    entry_gate: { approval: none, policy: [change-control] }
+    exit_gate:  { approval: required, policy: [compliance] }
+    handoff:
+      required: true
+      path: "sdlc-docs/handoffs/{run_id}/{node_id}.yaml"
+    policy_evidence_path: "sdlc-docs/policy-evidence/{run_id}/{node_id}/"
+
+  - id: architecture-design
+    phase: inception
+    agent: inception
+    parallel: false
+    depends_on: [requirements]
+    high_impact: true               # critical design decisions => durable confirmation (§8)
+    templates: [architecture-design-template.md, nfr-requirements-template.md, nfr-design-template.md]
+    standards: [security-standard, coding-standard]
+    input_artifacts:
+      - sdlc-docs/inception/requirements/requirements.md
+    output_artifacts:
+      - sdlc-docs/inception/architecture-design/architecture-design.md
+    entry_gate: { approval: none, policy: [security, change-control] }
+    exit_gate:  { approval: required, policy: [security, compliance] }
+    handoff:
+      required: true
+      path: "sdlc-docs/handoffs/{run_id}/{node_id}.yaml"
+    policy_evidence_path: "sdlc-docs/policy-evidence/{run_id}/{node_id}/"
+    branch:
+      - when: needs_decomposition
+        goto: unit-decomposition
+      - when: single_unit
+        goto: implementation
+
+  - id: unit-decomposition
+    phase: inception
+    agent: inception
+    parallel: false
+    depends_on: [architecture-design]
+    templates: [unit-decomposition-template.md, work-package-template.md]
+    standards: []
+    input_artifacts:
+      - sdlc-docs/inception/architecture-design/architecture-design.md
+    output_artifacts:
+      - sdlc-docs/construction/units/unit-registry.yaml
+    entry_gate: { approval: none, policy: [] }
+    exit_gate:  { approval: required, policy: [compliance] }
+    handoff:
+      required: true
+      path: "sdlc-docs/handoffs/{run_id}/{node_id}.yaml"
+    policy_evidence_path: "sdlc-docs/policy-evidence/{run_id}/{node_id}/"
+
+  # ---------------- CONSTRUCTION (multi-agent, concurrent autonomy) ----------------
+  - id: implementation
+    phase: construction
+    agent: construction
+    parallel: true
+    depends_on: [architecture-design, unit-decomposition]
+    high_impact: true               # building core features => durable confirmation (§8)
+    templates: [functional-design-template.md, implementation-plan-template.md]
+    standards: [coding-standard, security-standard]
+    input_artifacts:
+      - sdlc-docs/construction/units/unit-registry.yaml
+      - sdlc-docs/inception/architecture-design/architecture-design.md
+    output_artifacts:
+      - sdlc-docs/construction/plans/
+      - sdlc-docs/construction/units/unit-registry.yaml
+    unit_scope: decomposed          # v2 §3, §10
+    unit_registry: sdlc-docs/construction/units/unit-registry.yaml
+    parallelism: by_independent_unit
+    entry_gate: { approval: none, policy: [security] }
+    exit_gate:  { approval: none, policy: [security] }
+    handoff:
+      required: true
+      path: "sdlc-docs/handoffs/{run_id}/{node_id}.yaml"
+    policy_evidence_path: "sdlc-docs/policy-evidence/{run_id}/{node_id}/"
+
+  - id: testing
+    phase: construction
+    agent: construction
+    parallel: true
+    depends_on: [implementation]
+    templates: [test-plan-template.md]
+    standards: [testing-standard]
+    input_artifacts:
+      - sdlc-docs/construction/plans/
+    output_artifacts:
+      - sdlc-docs/construction/testing/
+    entry_gate: { approval: none, policy: [] }
+    exit_gate:  { approval: none, policy: [compliance] }
+    handoff:
+      required: true
+      path: "sdlc-docs/handoffs/{run_id}/{node_id}.yaml"
+    policy_evidence_path: "sdlc-docs/policy-evidence/{run_id}/{node_id}/"
+
+  - id: documentation
+    phase: construction
+    agent: construction
+    parallel: true
+    depends_on: [implementation]
+    templates: [documentation-plan-template.md]
+    standards: [documentation-standard]
+    input_artifacts:
+      - sdlc-docs/construction/plans/
+    output_artifacts:
+      - sdlc-docs/construction/documentation/
+    entry_gate: { approval: none, policy: [] }
+    exit_gate:  { approval: none, policy: [] }
+    handoff:
+      required: true
+      path: "sdlc-docs/handoffs/{run_id}/{node_id}.yaml"
+    policy_evidence_path: "sdlc-docs/policy-evidence/{run_id}/{node_id}/"
+
+  # Join point: testing + documentation converge before release readiness
+  - id: release-readiness
+    phase: construction
+    agent: construction
+    parallel: false
+    depends_on: [testing, documentation]
+    templates: [security-review-template.md, code-review-template.md, release-readiness-template.md]
+    standards: [code-review-standard, release-readiness-standard, security-standard]
+    input_artifacts:
+      - sdlc-docs/construction/testing/
+      - sdlc-docs/construction/documentation/
+      - sdlc-docs/construction/code-review/
+    output_artifacts:
+      - sdlc-docs/release-readiness/release-readiness.md
+    entry_gate: { approval: required, policy: [security, compliance, change-control] }
+    exit_gate:  { approval: required, policy: [security, compliance, change-control] }
+    handoff:
+      required: true
+      path: "sdlc-docs/handoffs/{run_id}/{node_id}.yaml"
+    policy_evidence_path: "sdlc-docs/policy-evidence/{run_id}/{node_id}/"
+    # Operations is a placeholder => defer to human decision (S7)
+    operations: human_decision
+
+metrics:                            # S10 / v2 §12 — minimum methodology-layer metrics
+  tracked:
+    - success_rate
+    - retry_frequency
+    - rollback_frequency
+    - mttr
+    - end_to_end_latency
+    - handoff_count            # v2 §12
+    - handoff_latency          # v2 §12
+    - blocked_gate_count       # v2 §12
+    - policy_error_count       # v2 §12
+    - retry_count              # v2 §12
+    - unresolved_risk_count    # v2 §12
+    - review_finding_count     # v2 §12 (by severity)
+    - traceability_coverage    # v2 §12 (percentage)
+  emit_as: audit_markers       # reconstructable from sdlc-docs/audit-log.md + evidence files
+  definitions: deferred        # v1 definitions deferred; v2 minimum set enumerated above

@@ -1,0 +1,26 @@
+# handoff-template.yaml
+# v2 §2 mandatory template. Copy to sdlc-docs/handoffs/<run-id>/<node-id>.yaml and fill.
+# The orchestrator BLOCKS downstream execution if this artifact is missing or malformed.
+# `status: passed` requires non-empty output_artifacts, policy_evidence, and context_summary.
+# Non-empty open_questions or unresolved high-severity risks block unless a human decision is recorded.
+
+run_id: ""
+node_id: ""
+phase: ""                       # inception | construction
+from_agent: ""
+to_agents: []
+status: pending                 # pending | in_progress | passed | failed | blocked | safe_stopped
+input_artifacts: []             # paths consumed from upstream
+output_artifacts: []            # paths produced (required non-empty when status: passed)
+template_ids: []                # templates each output artifact declared (§4)
+standards_applied: []           # standard ids enforced (§6)
+traceability_ids: []            # REQ-/ADR-/UNIT-/PLAN-/TEST-/DOC-/SEC-/CR-/REL- ids (§9)
+decisions_made: []
+approvals: []                   # paths to approval records (§8) e.g. sdlc-docs/approvals/<run>/<node>/<action>.yaml
+policy_evidence: []             # paths under sdlc-docs/policy-evidence/<run>/<node>/ (§7) (required when passed)
+validation_evidence: []
+open_questions: []              # non-empty => blocks unless human decision recorded
+risks: []                       # entries: { id, severity, description, status }
+compensating_actions: []
+next_ready_nodes: []
+context_summary: ""             # required non-empty when status: passed

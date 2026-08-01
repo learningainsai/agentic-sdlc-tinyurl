@@ -1,0 +1,4 @@
+# Subagent handoff artifacts (v2 §2)
+# Layout: sdlc-docs/handoffs/<run-id>/<node-id>.yaml
+# Template: .github/sdlc/templates/handoff-template.yaml
+# Schema:   .github/sdlc/schemas/handoff.schema.md

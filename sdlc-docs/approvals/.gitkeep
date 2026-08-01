@@ -1,0 +1,3 @@
+# Durable high-impact approval records (v2 §8)
+# Layout: sdlc-docs/approvals/<run-id>/<node-id>/<action-id>.yaml
+# Schema: .github/sdlc/schemas/approval.schema.md

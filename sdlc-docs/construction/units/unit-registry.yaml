@@ -1,0 +1,20 @@
+# Unit Registry (v2 §3)
+# Produced by the `unit-decomposition` node; consumed by `implementation` for parallel scheduling.
+# Schema: .github/sdlc/schemas/unit-registry.schema.md
+# This is an empty seed. The inception phase populates `units` from unit-decomposition-template.md.
+
+run_id: ""
+generated_by: unit-decomposition
+units: []
+#  - unit_id: UNIT-001
+#    name: ""
+#    owner_agent: construction
+#    depends_on_units: []
+#    requirements: []          # REQ-...
+#    design_refs: []           # ADR-...
+#    target_files: []          # conflict basis; concurrent units must not overlap
+#    expected_tests: []        # TEST-...
+#    documentation_refs: []    # DOC-...
+#    risk_level: low           # low | medium | high
+#    high_impact: false        # true => durable approval required (§8)
+#    status: pending           # pending | in_progress | passed | failed | blocked

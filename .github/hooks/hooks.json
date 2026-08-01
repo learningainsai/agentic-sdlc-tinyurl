@@ -1,0 +1,38 @@
+{
+  "$schema": "https://raw.githubusercontent.com/github/copilot-hooks/main/schema/hooks.schema.json",
+  "version": 1,
+  "description": "Lifecycle hooks for the agentic SDLC orchestrator: append-only audit + gate/high-impact enforcement.",
+  "hooks": {
+    "sessionStart": [
+      {
+        "name": "audit-session-start",
+        "run": ".github/hooks/scripts/audit-append.sh \"session\" \"session-start\" \"orchestrator session started\""
+      },
+      {
+        "name": "graph-validate",
+        "description": "Validates v2 workflow-graph fields and referenced templates/standards (v2 §10).",
+        "run": ".github/hooks/scripts/graph-validate.sh"
+      }
+    ],
+    "preToolUse": [
+      {
+        "name": "gate-check",
+        "description": "Blocks high-impact / gated actions until policy checks pass and human confirmation is recorded.",
+        "run": ".github/hooks/scripts/gate-check.sh"
+      }
+    ],
+    "postToolUse": [
+      {
+        "name": "audit-tool-use",
+        "description": "Appends every tool action to the append-only audit log.",
+        "run": ".github/hooks/scripts/audit-append.sh \"tool\" \"post-tool-use\" \"$COPILOT_TOOL_NAME\""
+      }
+    ],
+    "stop": [
+      {
+        "name": "audit-session-stop",
+        "run": ".github/hooks/scripts/audit-append.sh \"session\" \"session-stop\" \"orchestrator session ended\""
+      }
+    ]
+  }
+}

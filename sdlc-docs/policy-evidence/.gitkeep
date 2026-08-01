@@ -1,0 +1,3 @@
+# Hybrid policy gate evidence (v2 §7)
+# Layout: sdlc-docs/policy-evidence/<run-id>/<node-id>/
+# Written by .github/hooks/scripts/gate-check.sh
