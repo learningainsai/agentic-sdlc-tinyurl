@@ -30,6 +30,10 @@ process defined by the dependency graph in `.github/sdlc/workflow-graph.yaml`. Y
 3. For each ready node, run its **entry gate** via the `gate-approval` skill.
 4. Execute the node by delegating:
    - `phase: inception` → hand to `inception` agent (single-threaded, human-gated).
+     For the `requirements` node specifically, the `inception` agent **MUST** run the `idea-refiner`
+     skill and produce `sdlc-docs/inception/requirements/idea-refinement.md` **before** drafting
+     `requirements.md`. Do not accept the requirements exit gate unless that report exists (it is a
+     declared `output_artifact` and `required_skills: [idea-refiner]` in the graph).
    - `phase: construction` → hand to `construction` agent (may run parallel nodes/units concurrently).
 5. Before a node may consume upstream output, validate the upstream **handoff** artifact
    (`.github/hooks/scripts/handoff-validate.sh`). Missing/malformed → block (§2).

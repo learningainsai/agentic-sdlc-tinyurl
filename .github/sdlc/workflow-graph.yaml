@@ -113,8 +113,12 @@ nodes:
     depends_on: []
     templates: [requirements-template.md, user-story-template.md]
     standards: [documentation-standard]
+    # v2 §5 — idea-refiner MUST run before any requirements artifact is drafted.
+    # Its report is a required output artifact, so the exit gate cannot pass without it.
+    required_skills: [idea-refiner]
     input_artifacts: []
     output_artifacts:
+      - sdlc-docs/inception/requirements/idea-refinement.md
       - sdlc-docs/inception/requirements/requirements.md
     entry_gate: { approval: none, policy: [change-control] }
     exit_gate:  { approval: required, policy: [compliance] }
