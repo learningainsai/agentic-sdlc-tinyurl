@@ -1,0 +1,16 @@
+intake_id: INTAKE-20260802T000000Z-url-expiry-and-deactivate
+raw_request: "1) Set an optional expiration date/time on a short URL and 2) Delete/deactivate a short URL"
+classification: feature
+high_impact: true            # new core URL-lifecycle behavior + access-control implications
+run_id: pending-new-run      # re-planning vs existing run is a human decision (S5)
+entry_node: requirements
+current_phase: inception
+construction_unblocked: false
+status: withdrawn            # discarded by the human before requirements were agreed
+withdrawn_at: 2026-08-02T00:00:00Z
+withdrawn_reason: "Human chose to discard these requirements and start a fresh SDLC run with new requirements."
+created: 2026-08-02T00:00:00Z
+notes: >
+  Routed through inception per COMMON-NEW-WORK-INTAKE-GATE. idea-refiner critique raised (8 open
+  questions) but never agreed. Withdrawn per human request. Gates ignore withdrawn intakes so this
+  does not wedge the pipeline.

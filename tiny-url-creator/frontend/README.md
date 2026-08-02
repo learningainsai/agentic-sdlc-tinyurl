@@ -1,7 +1,7 @@
 # TinyURL Frontend (UNIT-002)
 
-Angular 17 standalone SPA providing the URL submission form for the TinyURL Phase 1 MVP. Traces to
-REQ-007 and ADR-002.
+Angular 17 standalone SPA providing the URL submission form for TinyURL. Traces to REQ-007, REQ-020
+and ADR-002, ADR-016. Phase 2 adds an optional link-expiry picker.
 
 ## Prerequisites
 
@@ -44,8 +44,13 @@ npm run build   # output in dist/tiny-url-frontend
 
 1. Enter a long URL (`http://` or `https://`).
 2. Optionally enter a custom alias (3–30 chars: letters, digits, `-`, `_`).
-3. Submit — the short URL appears with a **Copy** button.
-4. Validation errors show inline under each field; API errors (e.g. alias taken) show as an alert.
+3. Optionally pick an expiry date/time. The `datetime-local` value is entered in your local time
+   zone and converted to an absolute UTC instant before it is sent to the API (ADR-016). Leave it
+   blank for a link that never expires.
+4. Submit — the short URL appears with a **Copy** button; if the link has an expiry, it is shown
+   beneath the short URL.
+5. Validation errors show inline under each field; API errors (e.g. alias taken, expiry in the past)
+   show as an alert.
 
 ## Structure
 

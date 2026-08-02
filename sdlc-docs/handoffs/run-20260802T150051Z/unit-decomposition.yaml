@@ -1,0 +1,48 @@
+run_id: run-20260802T150051Z
+node_id: unit-decomposition
+phase: inception
+from_agent: inception
+to_agents: [inception, construction]
+status: passed
+intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+input_artifacts:
+  - sdlc-docs/inception/architecture-design/architecture-design.md
+  - sdlc-docs/handoffs/run-20260802T150051Z/architecture-design.yaml
+output_artifacts:
+  - sdlc-docs/construction/units/unit-registry.yaml
+  - sdlc-docs/inception/unit-decomposition/unit-decomposition.md
+template_ids:
+  - unit-decomposition-template.md
+  - work-package-template.md
+standards_applied: []
+traceability_ids:
+  - UNIT-001
+  - UNIT-002
+decisions_made:
+  - "Phase 2 extends the existing two units along the backend/frontend seam; no new units, no dependency edges."
+  - "UNIT-001 (backend): REQ-011..019, ADR-010..015 — expiry column, lazy expiry 404, bulk endpoint, N-token limiter."
+  - "UNIT-002 (frontend): REQ-020, ADR-016 — optional expiry picker."
+  - "Disjoint target_files (backend/** vs frontend/**) => concurrent construction permitted."
+approvals:
+  - by: human
+    decision: approved
+    verbatim: "Approve"
+    scope: "unit-decomposition exit gate (Phase 2 UNIT-001/UNIT-002 scope)"
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/unit-decomposition/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/unit-decomposition/exit-evidence.md
+validation_evidence:
+  - "Template compliance: unit-decomposition-template.md sections present (Phase 2 §7 added)."
+  - "Conflict rule: no target_file overlap between UNIT-001 and UNIT-002."
+  - "Each unit declares Phase 2 expected_tests (UNIT-001 TEST-010..016, UNIT-002 TEST-017..018)."
+open_questions: []
+risks: []
+compensating_actions: []
+next_ready_nodes: [plan]
+context_summary: >
+  Phase 2 decomposition approved. The expiry + bulk work maps onto the existing two units:
+  UNIT-001 (backend, REQ-011..019 / ADR-010..015) covers the nullable expires_at column and migration,
+  lazy read-time expiry (expired => 404), expiry validation (past/now => 400), the new POST
+  /api/links/bulk endpoint with best-effort partial success and size cap, and the shared RateLimiter
+  with N-token bulk accounting; UNIT-002 (frontend, REQ-020 / ADR-016) adds an optional expiry picker.
+  Target-file trees stay disjoint so the two units may be built concurrently. Next: plan.

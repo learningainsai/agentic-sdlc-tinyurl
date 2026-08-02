@@ -30,15 +30,24 @@ public class ShortLink {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    // Nullable: NULL means the link never expires (ADR-010, REQ-011/013).
+    @Column(name = "expires_at")
+    private Instant expiresAt;
+
     protected ShortLink() {
         // JPA
     }
 
     public ShortLink(String code, String originalUrl, boolean customAlias) {
+        this(code, originalUrl, customAlias, null);
+    }
+
+    public ShortLink(String code, String originalUrl, boolean customAlias, Instant expiresAt) {
         this.code = code;
         this.originalUrl = originalUrl;
         this.customAlias = customAlias;
         this.createdAt = Instant.now();
+        this.expiresAt = expiresAt;
     }
 
     public Long getId() {
@@ -59,5 +68,9 @@ public class ShortLink {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
     }
 }

@@ -11,28 +11,25 @@ import org.springframework.http.MediaType;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Per-IP fixed-window rate limiter for link creation (ADR-008/REQ-009).
- * In-memory and per-instance; a distributed limiter is deferred (RISK-004).
+ * Per-IP fixed-window rate limiter for single link creation (ADR-008/REQ-009). Delegates counting to
+ * the shared {@link RateLimiter} so bulk creation shares the same per-IP budget (ADR-014).
  * Registered via {@link WebConfig} so it stays out of MVC test slices.
  */
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    private final AppProperties properties;
+    private final RateLimiter rateLimiter;
     private final ObjectMapper objectMapper;
-    private final ConcurrentHashMap<String, Window> windows = new ConcurrentHashMap<>();
 
-    public RateLimitFilter(AppProperties properties, ObjectMapper objectMapper) {
-        this.properties = properties;
+    public RateLimitFilter(RateLimiter rateLimiter, ObjectMapper objectMapper) {
+        this.rateLimiter = rateLimiter;
         this.objectMapper = objectMapper;
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        // Only throttle link creation.
+        // Only throttle single link creation; bulk enforces its own N-token budget (ADR-014).
         return !("POST".equalsIgnoreCase(request.getMethod())
                 && "/api/links".equals(request.getRequestURI()));
     }
@@ -40,34 +37,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String clientIp = clientIp(request);
-        if (isAllowed(clientIp)) {
+        String clientIp = ClientIp.of(request);
+        if (rateLimiter.tryAcquire(clientIp, 1)) {
             filterChain.doFilter(request, response);
         } else {
             writeTooManyRequests(response);
         }
-    }
-
-    private boolean isAllowed(String clientIp) {
-        long windowMillis = properties.getRateLimit().getWindowSeconds() * 1000L;
-        int max = properties.getRateLimit().getMaxRequests();
-        long now = System.currentTimeMillis();
-
-        Window window = windows.compute(clientIp, (key, existing) -> {
-            if (existing == null || now - existing.startMillis >= windowMillis) {
-                return new Window(now);
-            }
-            return existing;
-        });
-        return window.count.incrementAndGet() <= max;
-    }
-
-    private static String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 
     private void writeTooManyRequests(HttpServletResponse response) throws IOException {
@@ -78,15 +53,5 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(),
                 "Rate limit exceeded. Please try again later.");
         objectMapper.writeValue(response.getWriter(), body);
-    }
-
-    /** Fixed-window counter. */
-    private static final class Window {
-        private final long startMillis;
-        private final AtomicInteger count = new AtomicInteger(0);
-
-        private Window(long startMillis) {
-            this.startMillis = startMillis;
-        }
     }
 }

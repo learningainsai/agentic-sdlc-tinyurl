@@ -9,6 +9,7 @@ The orchestrator drives an explicit DAG (`.github/sdlc/workflow-graph.yaml`) acr
 - **Construction** — multi-agent, concurrent autonomy by independent unit: `implementation` → (`testing` ∥ `documentation`) → `release-readiness`.
 
 ## Invariants
+0. **New-work intake (front door)**: any new idea/feature/change enters at `requirements` and traverses the full inception phase before any construction edit. Enforced by `intake-gate.sh` + `common/new-work-intake.md`; product-source edits are blocked while an intake is `construction_unblocked: false`.
 1. No node runs until every `depends_on` node reached a `passed` exit gate.
 2. Every node produces a durable **handoff** artifact before downstream consumption (§2).
 3. Every artifact declares the **template** it used (§4) and the **standards** enforced (§6).

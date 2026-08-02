@@ -523,3 +523,457 @@
 - **Result**: pass
 ---
 
+## graph-validate
+- **Timestamp**: 2026-08-02T13:48:32Z
+- **Event**: graph-check
+- **Actor**: graph-validate
+- **Detail**: graph valid
+- **Result**: valid
+---
+
+## intake-gate
+- **Timestamp**: 2026-08-02T13:48:33Z
+- **Event**: pre-tool-use
+- **Actor**: intake-gate
+- **Detail**: blocked 'tiny-url-creator/backend/src/main/java/Foo.java' — an intake is still in inception (construction_unblocked: false)
+- **Result**: block
+---
+
+## governance:intake-gate
+- **Timestamp**: 2026-08-02T13:49:04Z
+- **Event**: process-hardening
+- **Actor**: orchestrator
+- **Detail**: Added mandatory new-work intake gate (rule common/new-work-intake.md, hook intake-gate.sh preToolUse, new_work_policy in graph, orchestrator core-loop step 0). Any new idea now must traverse inception before construction; product-source edits hard-blocked while an intake is construction_unblocked:false.
+- **Result**: enforced
+---
+
+## intake:url-expiry-and-deactivate
+- **Timestamp**: 2026-08-02T13:49:04Z
+- **Event**: new-work-routed-to-inception
+- **Actor**: orchestrator
+- **Detail**: New idea (optional URL expiration + delete/deactivate) recorded as INTAKE-20260802T000000Z; idea-refiner critique raised, open questions posted to human. Construction blocked pending inception + human answers. Correcting earlier improper jump straight to code.
+- **Result**: block
+---
+
+## graph-validate
+- **Timestamp**: 2026-08-02T14:08:32Z
+- **Event**: graph-check
+- **Actor**: graph-validate
+- **Detail**: graph valid
+- **Result**: valid
+---
+
+## gate:requirements
+- **Timestamp**: 2026-08-02T14:08:32Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: human approval required; not recorded
+- **Result**: block
+---
+
+## inception-skill-gate
+- **Timestamp**: 2026-08-02T14:09:35Z
+- **Event**: pre-tool-use
+- **Actor**: inception-skill-gate
+- **Detail**: blocked 'sdlc-docs/inception/requirements/requirements.md' — idea-refiner report missing or not for intake INTAKE-20260802T000000Z-url-expiry-and-deactivate
+- **Result**: block
+---
+
+## governance:idea-refiner-auto-invoke
+- **Timestamp**: 2026-08-02T14:09:46Z
+- **Event**: process-hardening
+- **Actor**: orchestrator
+- **Detail**: Made idea-refiner auto-invoked on every inception trigger: new hook inception-skill-gate.sh (preToolUse) blocks drafting requirements.md/user-stories.md until a FRESH idea-refinement.md referencing the active pending intake id exists; gate-check.sh blocks the requirements exit gate on the same condition; graph new_work_policy.auto_invoke_on_inception_entry + requirements.auto_invoke_skills declare it. Verified stale prior-run report no longer satisfies the gate.
+- **Result**: enforced
+---
+
+## graph-validate
+- **Timestamp**: 2026-08-02T14:49:36Z
+- **Event**: graph-check
+- **Actor**: graph-validate
+- **Detail**: graph valid
+- **Result**: valid
+---
+
+## intake:url-expiry-and-deactivate
+- **Timestamp**: 2026-08-02T14:49:36Z
+- **Event**: withdrawn
+- **Actor**: human
+- **Detail**: Human discarded the URL-expiry/delete requirements before agreement; intake marked status: withdrawn. Gates updated to ignore withdrawn/superseded intakes. Awaiting new requirements to open a fresh run.
+- **Result**: withdrawn
+---
+
+## graph-validate
+- **Timestamp**: 2026-08-02T15:00:26Z
+- **Event**: graph-check
+- **Actor**: graph-validate
+- **Detail**: graph valid
+- **Result**: valid
+---
+
+## run:start
+- **Timestamp**: 2026-08-02T15:02:52Z
+- **Event**: workflow-start
+- **Actor**: orchestrator
+- **Detail**: Run run-20260802T150051Z started (new work). Intake INTAKE-20260802T150051Z-expiry-and-bulk-creation recorded (construction_unblocked: false). Scope: (1) optional expiry date column on short links; (2) bulk creation of short URLs. Routed through mandatory inception front door.
+- **Result**: started
+---
+
+## gate:requirements
+- **Timestamp**: 2026-08-02T15:02:52Z
+- **Event**: skill-invoked
+- **Actor**: inception
+- **Detail**: idea-refiner auto-invoked on inception entry; produced Phase 2 section in sdlc-docs/inception/requirements/idea-refinement.md with 9 open questions and D1-D9 recommended defaults. Verdict: NOT READY — awaiting human answers before drafting requirements.md.
+- **Result**: blocked-awaiting-human
+---
+
+## gate:requirements
+- **Timestamp**: 2026-08-02T15:10:57Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/requirements/exit-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T15:11:38Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## gate:requirements
+- **Timestamp**: 2026-08-02T15:11:38Z
+- **Event**: gate-exit
+- **Actor**: orchestrator
+- **Detail**: Requirements exit gate PASSED for run-20260802T150051Z. Human approval (verbatim): 'Accept all defaults' => D1-D9 confirmed. REQ-011..REQ-020 defined (expiry column + bulk creation). Handoff written; next ready node: architecture-design (high-impact).
+- **Result**: pass
+---
+
+## approval:architecture-design
+- **Timestamp**: 2026-08-02T15:14:19Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approved via /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T150051Z/architecture-design/architecture-design-approval.yaml
+- **Result**: approved
+---
+
+## gate:architecture-design
+- **Timestamp**: 2026-08-02T15:14:19Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/architecture-design/entry-evidence.md
+- **Result**: pass
+---
+
+## approval:architecture-design
+- **Timestamp**: 2026-08-02T15:14:19Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approved via /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T150051Z/architecture-design/architecture-design-approval.yaml
+- **Result**: approved
+---
+
+## gate:architecture-design
+- **Timestamp**: 2026-08-02T15:14:20Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/architecture-design/exit-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T15:14:51Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## approval:architecture-design
+- **Timestamp**: 2026-08-02T15:14:51Z
+- **Event**: high-impact-approval
+- **Actor**: orchestrator
+- **Detail**: Durable approval recorded (critical_design). User verbatim: 'Approve'. Record: sdlc-docs/approvals/run-20260802T150051Z/architecture-design/architecture-design-approval.yaml
+- **Result**: approved
+---
+
+## gate:architecture-design
+- **Timestamp**: 2026-08-02T15:14:51Z
+- **Event**: gate-exit
+- **Actor**: orchestrator
+- **Detail**: Architecture-design entry+exit gates PASSED for run-20260802T150051Z. ADR-010..ADR-016 (expiry column + bulk creation). Branch => needs_decomposition. Next ready: unit-decomposition.
+- **Result**: pass
+---
+
+## gate:unit-decomposition
+- **Timestamp**: 2026-08-02T15:16:44Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/unit-decomposition/entry-evidence.md
+- **Result**: pass
+---
+
+## gate:unit-decomposition
+- **Timestamp**: 2026-08-02T15:45:31Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/unit-decomposition/exit-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T15:46:35Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## gate:unit-decomposition
+- **Timestamp**: 2026-08-02T15:46:36Z
+- **Event**: gate-exit
+- **Actor**: orchestrator
+- **Detail**: Unit-decomposition entry+exit gates PASSED for run-20260802T150051Z (human approved). UNIT-001 (backend, REQ-011..019) + UNIT-002 (frontend, REQ-020); disjoint target_files => concurrent. Next ready: plan.
+- **Result**: pass
+---
+
+## gate:plan
+- **Timestamp**: 2026-08-02T15:50:57Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/plan/entry-evidence.md
+- **Result**: pass
+---
+
+## gate:plan
+- **Timestamp**: 2026-08-02T15:52:16Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/plan/exit-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T15:53:36Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## run-20260802T150051Z
+- **Timestamp**: 2026-08-02T15:56:03Z
+- **Event**: plan
+- **Actor**: Plan exit gate PASSED with human approval ('Approve'). breakdown-plan + breakdown-test complete (EPIC-2, FEAT-5/6/7, EN-5..8, TEST-010..018). Inception complete.
+- **Detail**: gate-exit
+- **Result**: pass
+---
+
+
+## 2026-08-02T15:57:16Z | run-20260802T150051Z | plan | handoff | produced
+Handoff sdlc-docs/handoffs/run-20260802T150051Z/plan.yaml produced and validated (HANDOFF VALID). construction_unblocked flag propagated.
+
+## 2026-08-02T15:57:16Z | run-20260802T150051Z | intake | unblocked
+INTAKE-20260802T150051Z-expiry-and-bulk-creation construction_unblocked set true after plan gate pass. Product-source edits now permitted for UNIT-001 + UNIT-002. Phase => construction.
+## approval:implementation
+- **Timestamp**: 2026-08-02T15:58:58Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approved via /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T150051Z/implementation/implementation-high-impact-approval.yaml
+- **Result**: approved
+---
+
+## gate:implementation
+- **Timestamp**: 2026-08-02T15:58:58Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/implementation/entry-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T16:24:15Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## approval:implementation
+- **Timestamp**: 2026-08-02T16:24:33Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approved via /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T150051Z/implementation/implementation-high-impact-approval.yaml
+- **Result**: approved
+---
+
+## gate:implementation
+- **Timestamp**: 2026-08-02T16:24:33Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/implementation/exit-evidence.md
+- **Result**: pass
+---
+
+## unit:UNIT-001
+- **Timestamp**: 2026-08-02T16:25:10Z
+- **Event**: unit-passed
+- **Actor**: construction
+- **Detail**: Backend expiry+bulk: ./mvnw -o verify 31 unit/slice + 3 IT (LinkFlowIT); BUILD SUCCESS
+- **Result**: passed
+---
+
+## unit:UNIT-002
+- **Timestamp**: 2026-08-02T16:25:10Z
+- **Event**: unit-passed
+- **Actor**: construction
+- **Detail**: Frontend expiry picker: ng build complete; ng test 9 specs (ChromeHeadlessCI)
+- **Result**: passed
+---
+
+## node:implementation
+- **Timestamp**: 2026-08-02T16:25:10Z
+- **Event**: handoff-produced
+- **Actor**: construction
+- **Detail**: handoffs/run-20260802T150051Z/implementation.yaml (HANDOFF VALID); to_agents: testing, documentation
+- **Result**: valid
+---
+
+## node:implementation
+- **Timestamp**: 2026-08-02T16:25:10Z
+- **Event**: node-passed
+- **Actor**: orchestrator
+- **Detail**: Phase 2 implementation complete; UNIT-001+UNIT-002 passed; next ready: testing, documentation
+- **Result**: passed
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T16:28:44Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T16:28:44Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## gate:testing
+- **Timestamp**: 2026-08-02T16:28:44Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/testing/exit-evidence.md
+- **Result**: pass
+---
+
+## gate:documentation
+- **Timestamp**: 2026-08-02T16:28:44Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/documentation/exit-evidence.md
+- **Result**: pass
+---
+
+## node:testing
+- **Timestamp**: 2026-08-02T16:28:55Z
+- **Event**: handoff-produced
+- **Actor**: construction
+- **Detail**: handoffs/run-20260802T150051Z/testing.yaml (HANDOFF VALID); to: release-readiness
+- **Result**: valid
+---
+
+## node:testing
+- **Timestamp**: 2026-08-02T16:28:55Z
+- **Event**: node-passed
+- **Actor**: orchestrator
+- **Detail**: Phase 2 test plan; backend 34 tests + frontend 9 specs green; TEST-010..018 traced
+- **Result**: passed
+---
+
+## node:documentation
+- **Timestamp**: 2026-08-02T16:28:55Z
+- **Event**: handoff-produced
+- **Actor**: construction
+- **Detail**: handoffs/run-20260802T150051Z/documentation.yaml (HANDOFF VALID); to: release-readiness
+- **Result**: valid
+---
+
+## node:documentation
+- **Timestamp**: 2026-08-02T16:28:55Z
+- **Event**: node-passed
+- **Actor**: orchestrator
+- **Detail**: DOC-003 backend API + DOC-004 frontend expiry picker updated for Phase 2
+- **Result**: passed
+---
+
+## node:release-readiness
+- **Timestamp**: 2026-08-02T16:31:46Z
+- **Event**: package-prepared
+- **Actor**: construction
+- **Detail**: Phase 2 review pack: code-review (CR-010..015 passed), security-review (SEC-010..014 resolved), release-readiness.md (recommendation: ready)
+- **Result**: ready
+---
+
+## node:release-readiness
+- **Timestamp**: 2026-08-02T16:31:46Z
+- **Event**: human-decision-point
+- **Actor**: orchestrator
+- **Detail**: release-readiness entry gate requires human go/no-go (approval: required); operations deferred (S7). Awaiting user decision.
+- **Result**: block
+---
+
+## approval:release-readiness
+- **Timestamp**: 2026-08-02T16:32:41Z
+- **Event**: go-approval
+- **Actor**: approval-check
+- **Detail**: approved via sdlc-docs/approvals/run-20260802T150051Z/release-readiness/release-readiness-go-approval.yaml
+- **Result**: approved
+---
+
+## gate:release-readiness
+- **Timestamp**: 2026-08-02T16:32:41Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/release-readiness/entry-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T16:32:54Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## gate:release-readiness
+- **Timestamp**: 2026-08-02T16:32:54Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T150051Z/release-readiness/exit-evidence.md
+- **Result**: pass
+---
+
+## node:release-readiness
+- **Timestamp**: 2026-08-02T16:32:59Z
+- **Event**: handoff-produced
+- **Actor**: construction
+- **Detail**: handoffs/run-20260802T150051Z/release-readiness.yaml (HANDOFF VALID); final node closed
+- **Result**: valid
+---
+
+## node:release-readiness
+- **Timestamp**: 2026-08-02T16:32:59Z
+- **Event**: node-passed
+- **Actor**: orchestrator
+- **Detail**: Phase 2 release-readiness passed; human decision Go; no automated deploy executed
+- **Result**: passed
+---
+

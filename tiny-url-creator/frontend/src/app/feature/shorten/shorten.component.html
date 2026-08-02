@@ -34,6 +34,14 @@
       </p>
     }
 
+    <label for="expiresAt">Expiration date/time (optional)</label>
+    <input
+      id="expiresAt"
+      type="datetime-local"
+      formControlName="expiresAt"
+      autocomplete="off"
+    />
+
     <button type="submit" [disabled]="submitting()">
       {{ submitting() ? 'Shortening…' : 'Shorten' }}
     </button>
@@ -54,6 +62,9 @@
           {{ copied() ? 'Copied' : 'Copy' }}
         </button>
       </div>
+      @if (link.expiresAt; as expiresAt) {
+        <p class="result-expiry">Expires {{ expiresAt | date: 'medium' }}</p>
+      }
     </section>
   }
 </main>

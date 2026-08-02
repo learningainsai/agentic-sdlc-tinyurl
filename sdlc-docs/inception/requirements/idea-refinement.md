@@ -1,4 +1,124 @@
-# Idea Refinement — TinyURL URL Shortener (Phase 1 MVP)
+# Idea Refinement — TinyURL URL Shortener
+
+> Cumulative pre-implementation critique log. The **current run** (Phase 2) appears first; the prior
+> Phase 1 MVP critique is preserved below for lineage. Gate path is fixed by the workflow graph.
+
+---
+
+## Run run-20260802T150051Z — Phase 2 (Expiry column + Bulk creation)
+
+- **run_id**: run-20260802T150051Z
+- **node_id**: requirements
+- **skill**: idea-refiner
+- **authored_by**: inception
+- **review_mode**: pre-implementation critique (no code)
+- **intake**: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+- **source**: User request (verbatim) — "I want to add the feature of having an additional column for
+  having optional expiry date column. Also want to add bulk creation of short urls."
+
+This report interrogates the two requested capabilities **before** any requirements are drafted or
+code is written. Findings are grounded in the existing Phase 1 implementation (`ShortLink` entity,
+`LinkService`, `LinkController`, `RedirectController`). A verdict and numbered open questions appear at
+the end of this section; **these must be agreed with the human before `requirements.md` is drafted.**
+
+### Ambiguities
+
+1. **"optional expiry date column"** — Column vs. behavior conflated. An expiry *column* is a storage
+   change; the meaningful requirement is *what happens when a link is expired*. Unspecified: does an
+   expired code return **404** (as if never existed) or **410 Gone** (existed, now expired)? Should the
+   UI expose the expiry, and should the create response echo it back?
+2. **Expiry granularity & type** — "expiry date" vs. "date/time". Is the value a calendar **date**
+   (expires at end of day, in which timezone?) or a precise **timestamp/instant** (UTC)? Phase 1 stores
+   `createdAt` as `Instant` (UTC) — consistency suggests an absolute UTC instant.
+3. **How expiry is supplied** — Absolute timestamp (e.g. `2026-12-31T23:59:59Z`) supplied by the
+   client, or a relative **TTL/duration** (e.g. "7 days") the server converts to an absolute instant?
+   These are different API contracts.
+4. **Bulk creation shape** — "bulk creation" does not define the request/response contract. Is it an
+   array of `{url, alias?, expiresAt?}` objects returning an array of results? Is it a new endpoint
+   (`POST /api/links/bulk`) or an overload of the existing `POST /api/links`?
+5. **Partial success semantics** — In a bulk request where some items are valid and some invalid
+   (bad URL, taken alias, past expiry), is the outcome **all-or-nothing** (transactional, reject the
+   whole batch) or **best-effort** (persist the good ones, report per-item errors)? This is the single
+   biggest design decision and is completely unspecified.
+
+### Missing Edge Cases
+
+1. **Expiry in the past / present** — What if `expiresAt` is already in the past or equals "now" at
+   creation time? Reject with 400, or accept a link that is born expired?
+2. **Expiry = null** — Confirm null/absent means **never expires** (Phase 1 behavior preserved).
+3. **Far-future / bogus dates** — Extreme values (year 9999), malformed date strings, non-ISO formats.
+4. **Redirect on the boundary** — Race between the expiry instant and an in-flight redirect. Expiry is
+   checked in `resolve()`; the check must be inclusive/exclusive-defined (`now >= expiresAt` ⇒ expired).
+5. **Expired-code reuse** — Once a code/alias is expired, can that alias be **reclaimed** by a new
+   create request, or is it permanently burned? Affects the uniqueness constraint and cleanup.
+6. **Bulk size limits** — No max batch size ⇒ a single request could create thousands of links (DoS /
+   memory / DB pressure). What is the maximum items per bulk request?
+7. **Duplicate aliases *within* one bulk request** — Two items in the same batch requesting the same
+   custom alias. Must be detected intra-batch, not only against the database.
+8. **Bulk + rate limiting** — Phase 1 rate-limits per creation request per IP. Does a bulk request
+   count as **1** request or **N**? Otherwise bulk trivially bypasses REQ-009 rate limiting.
+9. **Empty bulk array** — `[]` or missing items ⇒ 400, or 200 with empty result?
+
+### Unstated Assumptions
+
+1. **Storage/migration** — Adding a column to `short_link` implies a schema migration. Assumed nullable
+   `expires_at TIMESTAMP` so existing rows (never-expire) remain valid.
+2. **Clock source** — Server wall-clock (UTC) is the authority for expiry evaluation.
+3. **No background reaper** — Assumed expiry is enforced lazily at redirect time (filter on read), not
+   by a scheduled deletion job, unless stated otherwise. Expired rows remain in the DB.
+4. **Bulk auth** — Creation remains anonymous/public (Phase 1 A6); bulk does not introduce accounts.
+5. **Frontend scope** — Unclear whether the Angular UI must add an expiry picker and a bulk-entry
+   screen, or whether these are API-only for Phase 2.
+
+### Scope Risks
+
+1. **Expiry cleanup / analytics out of scope?** — Confirm no reaper job, no "expired links" listing,
+   no metrics are required now.
+2. **Bulk import from file (CSV) out of scope?** — "Bulk creation" could be interpreted as file upload;
+   assumed JSON array only.
+3. **Editing/extending expiry out of scope?** — No update endpoint to change an expiry after creation.
+4. **Delete/deactivate explicitly excluded** — The withdrawn prior intake bundled deactivate; this run
+   carries **only** expiry + bulk. Confirm delete stays out of scope.
+
+### Open Questions (must be answered before requirements are drafted)
+
+1. **Expired behavior:** return **404** or **410 Gone** for an expired code?
+2. **Expiry type:** absolute UTC **timestamp** from the client, a **relative TTL** (e.g. days), or
+   **both**?
+3. **Past/`now` expiry at creation:** reject with 400, or allow?
+4. **Alias reclaim:** may an expired alias be reused by a later create, or is it permanently reserved?
+5. **Bulk contract:** new `POST /api/links/bulk` taking a JSON array, returning per-item results?
+6. **Partial success:** **best-effort per-item** (recommended) or **all-or-nothing transactional**?
+7. **Max batch size:** what limit (e.g. 100 items)?
+8. **Bulk vs. rate limiting:** does one bulk request consume **N** rate-limit tokens (recommended) or 1?
+9. **Frontend:** add an expiry picker and a bulk-entry UI in Phase 2, or API-only?
+
+### Recommended defaults (proposed — pending human confirmation)
+
+- **D1**: Expired code ⇒ **404** (consistent with Phase 1 "unknown code" and does not leak existence).
+- **D2**: Expiry is an **absolute UTC timestamp** (`expiresAt`, ISO-8601 `Instant`); optional/nullable
+  ⇒ null means never expires.
+- **D3**: `expiresAt` **must be in the future** at creation; past/now ⇒ **400**.
+- **D4**: An expired alias is **permanently reserved** (row retained; lazy expiry only, no reaper).
+- **D5**: Bulk = **new** endpoint `POST /api/links/bulk` accepting a JSON array of
+  `{url, alias?, expiresAt?}`.
+- **D6**: **Best-effort** partial success — persist valid items, return HTTP **207-style** per-item
+  results (each item: created or error with reason); the batch itself returns 200/201.
+- **D7**: **Max 100** items per bulk request; over-limit ⇒ **400**.
+- **D8**: A bulk request consumes **N** rate-limit tokens (one per item) so bulk cannot bypass REQ-009.
+- **D9**: Frontend adds an **optional expiry picker** on the existing form; bulk is **API-only** for
+  Phase 2 (revisit UI later) — unless you want the bulk UI now.
+
+### Verdict
+
+**NOT READY to draft requirements.** Nine open questions materially change the API contract, data
+model, and failure semantics. Proceeding on assumptions would risk building the wrong behavior
+(especially partial-success and rate-limit interaction). Awaiting human answers (accept the D1–D9
+defaults or override each).
+
+---
+
+## Run run-20260801T232309Z — Phase 1 MVP
 
 - **run_id**: run-20260801T232309Z
 - **node_id**: requirements

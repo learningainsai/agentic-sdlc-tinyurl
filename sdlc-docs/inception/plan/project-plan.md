@@ -179,3 +179,115 @@ graph LR
 ## 9. Open questions (required)
 
 N/A — the plan is derived entirely from approved inception artifacts; no open questions remain.
+
+---
+
+## 10. Phase 2 plan — Expiry + Bulk creation (run-20260802T150051Z)
+
+- **skill**: breakdown-plan · **sources**: requirements.md (REQ-011..020), user-stories.md
+  (US-011..019), architecture-design.md (ADR-010..016), unit-registry.yaml (UNIT-001/002 Phase 2).
+
+### 10.1 Overview
+
+- **Business value**: let creators time-box links (expiry) and shorten many URLs in one call (bulk),
+  broadening the product beyond one-at-a-time anonymous shortening.
+- **Success criteria**: 100% of REQ-011..REQ-020 acceptance criteria pass automated tests; redirect
+  hot path stays p95 ≤ 100 ms; bulk bounded to 100 items; zero new high/critical security findings.
+- **Milestones**: M5 backend expiry (column + lazy 404 + validation); M6 backend bulk endpoint +
+  N-token limiter; M7 frontend expiry picker; M8 tests green + docs; M9 release-readiness passed.
+
+### 10.2 Work item hierarchy
+
+```mermaid
+graph TD
+    E2[Epic EPIC-2: Link lifecycle & bulk creation] --> F5[Feature FEAT-5: Link expiry]
+    E2 --> F6[Feature FEAT-6: Bulk creation]
+    E2 --> F7[Feature FEAT-7: Expiry in UI]
+
+    F5 --> S11[US-011 Optional expiry]
+    F5 --> S12[US-012 Reject non-future expiry]
+    F5 --> S13[US-013 Expired stops redirecting]
+    F5 --> S14[US-014 Expired alias reserved]
+    F5 --> EN5[Enabler EN-5: expires_at column + migration + lazy expiry]
+
+    F6 --> S15[US-015 Bulk create]
+    F6 --> S16[US-016 Partial success + per-item results]
+    F6 --> S17[US-017 Bulk size bounds]
+    F6 --> S18[US-018 Bulk honors rate limit]
+    F6 --> EN6[Enabler EN-6: bulk DTOs + endpoint]
+    F6 --> EN7[Enabler EN-7: shared RateLimiter + N-token accounting]
+
+    F7 --> S19[US-019 Expiry picker]
+    F7 --> EN8[Enabler EN-8: datetime-local control in LinkService form]
+
+    S11 --> T10[TEST-010..016 Backend expiry+bulk]
+    S19 --> T17[TEST-017..018 UI expiry]
+```
+
+### 10.3 Issues breakdown
+
+**Epic EPIC-2: Link lifecycle & bulk creation** — REQ-011..020 satisfied; NFRs met; release-readiness
+passed. Labels: `epic`,`priority-high`,`value-high`. Traces: all Phase 2 REQ/ADR/UNIT.
+
+| Feature | Unit | Stories | Enablers | Acceptance | Labels | Est |
+|---------|------|---------|----------|------------|--------|-----|
+| FEAT-5 Link expiry | UNIT-001 | US-011,012,013,014 | EN-5 | optional expiry stored/echoed; past/now→400; expired→404; expired alias reserved | `feature`,`backend`,`priority-high` | S |
+| FEAT-6 Bulk creation | UNIT-001 | US-015,016,017,018 | EN-6, EN-7 | array in→ordered per-item results; partial success; 0/>100→400; N-token 429 | `feature`,`backend`,`security`,`priority-high` | M |
+| FEAT-7 Expiry in UI | UNIT-002 | US-019 | EN-8 | optional picker→expiresAt; blank→never; created expiry shown | `feature`,`frontend`,`priority-medium` | S |
+
+**Stories (INVEST)**
+
+| Story | Statement (abbrev.) | AC source | Labels | Est |
+|-------|---------------------|-----------|--------|-----|
+| US-011 | Optional expiry on create | REQ-011 | `user-story`,`backend`,`P1` | 2 |
+| US-012 | Reject non-future expiry | REQ-012 | `user-story`,`backend`,`P1` | 1 |
+| US-013 | Expired stops redirecting (404) | REQ-013 | `user-story`,`backend`,`P1` | 2 |
+| US-014 | Expired alias reserved | REQ-014 | `user-story`,`backend`,`P2` | 1 |
+| US-015 | Bulk create | REQ-015 | `user-story`,`backend`,`P1` | 3 |
+| US-016 | Partial success + per-item results | REQ-016,018 | `user-story`,`backend`,`P1` | 3 |
+| US-017 | Bulk size bounds | REQ-017 | `user-story`,`backend`,`P1` | 1 |
+| US-018 | Bulk honors rate limit (N tokens) | REQ-019 | `user-story`,`backend`,`security`,`P2` | 2 |
+| US-019 | Expiry picker in UI | REQ-020 | `user-story`,`frontend`,`P2` | 2 |
+
+**Technical enablers**
+
+| Enabler | Description | Enables | Labels | Est |
+|---------|-------------|---------|--------|-----|
+| EN-5 | `expires_at` nullable column + backward-compatible migration + lazy expiry in `resolve()` + `InvalidExpiryException`→400 | US-011,012,013,014 | `enabler`,`backend`,`database`,`P1` | 3 |
+| EN-6 | `BulkCreateRequest`/`BulkCreateResponse`/`BulkItemResult` DTOs + `POST /api/links/bulk` controller + best-effort per-item service loop | US-015,016,017 | `enabler`,`backend`,`P1` | 3 |
+| EN-7 | Extract shared `RateLimiter` bean from `RateLimitFilter`; N-token bulk accounting; exclude bulk path from filter | US-018 | `enabler`,`backend`,`security`,`P2` | 2 |
+| EN-8 | Optional `datetime-local` control in the shorten form; UTC ISO conversion via `LinkService` | US-019 | `enabler`,`frontend`,`P2` | 2 |
+
+**Tests**
+
+| Test | Covers | Labels |
+|------|--------|--------|
+| TEST-010..016 | Backend expiry (create/validate/404/reserved) + bulk (happy/partial/bounds/rate-limit) (UNIT-001) | `test`,`backend` |
+| TEST-017..018 | UI expiry picker sends/omits `expiresAt`; shows expiry (UNIT-002) | `test`,`frontend` |
+
+### 10.4 Estimation & critical path
+
+- **Total Phase 2 points**: ~27 (stories 17 + enablers 10). Epic size **M**.
+- **Critical path**: EN-5 → US-011/012/013 → US-014; EN-6 → US-015/016/017 → EN-7 → US-018.
+- **Parallel**: UNIT-002 (EN-8 → US-019) runs concurrently with UNIT-001 (disjoint files).
+- **Prerequisite**: EN-5 (schema) precedes expiry stories; EN-6 precedes bulk stories; EN-7 after EN-6.
+
+### 10.5 Risk assessment (Phase 2)
+
+- RISK-011 (medium, mitigated): bulk DoS — max-100 cap + N-token limit (EN-7).
+- RISK-012 (low, accepted): expired rows retained (no reaper) — table growth deferred.
+- RISK-013 (low, mitigated): partial-success requires per-item inspection — explicit error codes.
+
+### 10.6 Traceability (Phase 2)
+
+| Work item | REQ | US | ADR | UNIT |
+|-----------|-----|----|-----|------|
+| FEAT-5 | 011–014 | 011–014 | 010,011,012,015 | UNIT-001 |
+| FEAT-6 | 015–019 | 015–018 | 013,014 | UNIT-001 |
+| FEAT-7 | 020 | 019 | 016 | UNIT-002 |
+| EN-5 | 011,012,013,014 | — | 010,011,012,015 | UNIT-001 |
+| EN-6 | 015,016,017 | 015,016,017 | 013 | UNIT-001 |
+| EN-7 | 019 | 018 | 014 | UNIT-001 |
+| EN-8 | 020 | 019 | 016 | UNIT-002 |
+| TEST-010..016 | 011–019 | 011–018 | 010–015 | UNIT-001 |
+| TEST-017..018 | 020 | 019 | 016 | UNIT-002 |

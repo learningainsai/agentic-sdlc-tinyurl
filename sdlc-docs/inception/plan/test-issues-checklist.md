@@ -42,3 +42,41 @@
 | Security tests | 009,010 | 009,010 | UNIT-001 | TEST-003,004 |
 | UI tests | 007 | 007 | UNIT-002 | TEST-008,009 |
 | E2E | 001,005,007 | 001,005,007 | UNIT-001/002 | TEST-006,008 |
+
+---
+
+## Phase 2 test issues — Expiry + Bulk creation (run-20260802T150051Z)
+
+### Test level issues
+- [ ] Expiry unit/integration — create with expiresAt, past/now→400, expired→404, expired alias→409
+      (use a fixed/injected clock for deterministic boundaries)
+- [ ] Bulk integration — happy path (ordered results), best-effort partial success, intra-batch alias
+      collision, 0/>100→400, N-token budget < N → 429 (nothing created)
+- [ ] Security test — bulk cannot bypass per-IP rate limiting; per-item validation parity with single create
+- [ ] UI unit tests — expiry picker sends `expiresAt`; blank omits it; created expiry displayed
+- [ ] Regression — Phase 1 suite (TEST-001..009) stays green after schema + limiter refactor
+
+### Coverage targets & metrics (Phase 2)
+- [ ] 100% of REQ-011..020 acceptance criteria automated
+- [ ] ≥80% line / ≥90% branch on new expiry + bulk paths
+- [ ] 100% of RISK-011/012/013 scenarios covered
+- [ ] Redirect hot path performance unchanged (added expiry comparison only)
+
+### Task breakdown & estimation (Phase 2)
+| Test task | Type | Est | Depends on |
+|-----------|------|-----|-----------|
+| Expiry validation + lazy-expiry redirect tests | unit/integration | 3 | EN-5 |
+| Expired-alias reservation test | integration | 1 | EN-5 |
+| Bulk happy + partial-success + bounds tests | integration | 3 | EN-6 |
+| Bulk N-token rate-limit test | security | 2 | EN-7 |
+| UI expiry picker tests | unit | 2 | EN-8 |
+| Phase 1 regression re-run | regression | 1 | EN-5, EN-7 |
+- [ ] Critical path: EN-5 → expiry tests; EN-6 → bulk tests → EN-7 → rate-limit test
+
+### Phase 2 traceability
+| Test issue | REQ | US | UNIT | TEST |
+|------------|-----|----|------|------|
+| Expiry tests | 011,012,013,014 | 011–014 | UNIT-001 | TEST-010,011,012 |
+| Bulk tests | 015,016,017,018 | 015–017 | UNIT-001 | TEST-013,014,015 |
+| Bulk rate-limit | 019 | 018 | UNIT-001 | TEST-016 |
+| UI expiry | 020 | 019 | UNIT-002 | TEST-017,018 |

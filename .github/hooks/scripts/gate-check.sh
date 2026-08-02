@@ -63,6 +63,29 @@ if [ -n "$FAILED" ]; then
   exit 3
 fi
 
+# --- Auto-invoked required skills (v2 §5): idea-refiner is mandatory on every inception trigger. ---
+# The requirements node cannot pass its EXIT gate unless a FRESH idea-refiner report exists that
+# references the active (pending) intake id — a stale report from a prior run does not satisfy this.
+if [ "$NODE_ID" = "requirements" ] && [ "$GATE" = "exit" ]; then
+  IDEA_REFINEMENT="${REPO_ROOT}/sdlc-docs/inception/requirements/idea-refinement.md"
+  INTAKE_DIR="${REPO_ROOT}/sdlc-docs/intake"
+  PENDING_FILE=""
+  for f in "$INTAKE_DIR"/*.yaml; do
+    [ -e "$f" ] || continue
+    grep -qE 'construction_unblocked:[[:space:]]*false' "$f" || continue
+    grep -qiE 'status:[[:space:]]*(withdrawn|superseded)' "$f" && continue
+    PENDING_FILE="$f"; break
+  done
+  INTAKE_ID="$(awk -F': *' '/^intake_id:/{print $2; exit}' "$PENDING_FILE" 2>/dev/null | tr -d '\r')"
+  if [ -n "$PENDING_FILE" ] && { [ ! -s "$IDEA_REFINEMENT" ] || [ -z "$INTAKE_ID" ] || ! grep -qF "$INTAKE_ID" "$IDEA_REFINEMENT" 2>/dev/null; }; then
+    evid "required-skill idea-refiner: fresh report for intake '${INTAKE_ID}' missing => block"
+    log "requirements exit blocked: idea-refiner report missing/stale for ${INTAKE_ID}" "block"
+    echo "GATE BLOCK (requirements/exit): idea-refiner is mandatory; ${IDEA_REFINEMENT} must reference active intake '${INTAKE_ID}' before this gate can pass." >&2
+    exit 2
+  fi
+  evid "required-skill idea-refiner: report present for intake '${INTAKE_ID:-n/a}'"
+fi
+
 # --- High-impact durable approval (S3 + v2 §8): agent classifies, human confirms, record persists. ---
 if grep -Eq "id:[[:space:]]*${NODE_ID}\b" "$GRAPH" 2>/dev/null; then
   if awk -v n="$NODE_ID" '

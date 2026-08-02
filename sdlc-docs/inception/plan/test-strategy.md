@@ -93,3 +93,70 @@
 ## 6. Open questions (required)
 
 N/A — derived from approved inception artifacts; no open questions.
+
+---
+
+## 7. Phase 2 test strategy — Expiry + Bulk creation (run-20260802T150051Z)
+
+- **skill**: breakdown-test · **sources**: REQ-011..020, US-011..019, ADR-010..016 (RISK-011..014),
+  project-plan.md §10, unit-registry.yaml (UNIT-001/002 Phase 2).
+
+### 7.1 Scope & objectives
+
+- **In scope**: optional expiry on single create (store/echo/validate), lazy expiry enforcement on
+  redirect (expired→404), expired-alias reservation, bulk endpoint (happy path, best-effort partial
+  success, intra-batch alias collision, 0/>100 bounds, N-token rate limiting), and the frontend expiry
+  picker (sends/omits `expiresAt`, displays expiry).
+- **Out of scope**: reaper/cleanup job, bulk UI, CSV import, relative TTL, delete/deactivate.
+- **Objectives**: 100% of REQ-011..020 acceptance criteria automated; redirect hot path unchanged
+  (p95 ≤ 100 ms with the added in-memory expiry comparison); bulk bounded; zero new high/critical
+  security findings.
+
+### 7.2 ISTQB techniques (Phase 2)
+
+- **Equivalence Partitioning**: `expiresAt` classes (null, future, now, past, malformed); bulk size
+  classes (0, 1, 100, 101); item validity classes (valid, bad URL, taken alias, past expiry).
+- **Boundary Value Analysis**: expiry boundary `now` vs `now+1s`; `now-1s` (past); bulk size {0,1,100,101};
+  redirect boundary at exactly `expiresAt` (`now >= expiresAt ⇒ expired`).
+- **Decision Table**: bulk item outcome over {url valid?, alias present/valid/taken?, expiry null/future/past?}
+  → created / item-error; and batch-level {size in-range?, per-IP budget ≥ N?} → process / 400 / 429.
+- **State Transition**: create (active) → time passes → expired → redirect 404; expired alias → re-create
+  attempt → 409.
+- **Experience-based**: clock-skew wording, timezone-less input, duplicate aliases within a batch,
+  oversized batch, partial-budget bulk.
+
+### 7.3 ISO 25010 (Phase 2 deltas)
+
+| Characteristic | Priority | Validation approach |
+|----------------|----------|---------------------|
+| Functional suitability | **Critical** | TEST-010..018 map to REQ-011..020 |
+| Security | **High** | bulk cap + N-token limit (no rate-limit bypass); per-item validation; expiry→404 does not leak existence |
+| Performance efficiency | **High** | redirect p95 ≤ 100 ms unchanged; bulk bounded (≤100 items) |
+| Reliability | **Medium** | best-effort partial success; consistent ErrorResponse for 400/404/409/429 |
+| Maintainability | **Medium** | shared RateLimiter refactor keeps single + bulk paths DRY; ≥80% coverage on new code |
+
+### 7.4 Environment & data (Phase 2)
+
+- Backend: JUnit 5 + Spring Boot Test + H2; MockMvc for the bulk endpoint and expiry redirect paths;
+  control the clock (inject a `Clock`/fixed instant) to test expiry boundaries deterministically.
+- Frontend: Angular TestBed + `HttpTestingController` for the expiry picker → `expiresAt` payload.
+- Test data: expiry fixtures (null/future/now/past), bulk arrays (empty, 1, 100, 101, mixed valid/invalid,
+  duplicate-alias), pre-seeded expired rows. No PII.
+- Tooling: existing Surefire/Mockito/TestBed — no new third-party libraries (flag before adding).
+
+### 7.5 Traceability (Phase 2)
+
+| Test item | REQ | US | ADR | UNIT | TEST |
+|-----------|-----|----|-----|------|------|
+| Optional expiry create + validation | 011,012 | 011,012 | 010,012 | UNIT-001 | TEST-010 |
+| Expired redirect 404 / active 302 | 013 | 013 | 011 | UNIT-001 | TEST-011 |
+| Expired alias reserved (409) | 014 | 014 | 015 | UNIT-001 | TEST-012 |
+| Bulk happy path (ordered results) | 015 | 015 | 013 | UNIT-001 | TEST-013 |
+| Bulk partial success + intra-batch alias | 016,018 | 016 | 013 | UNIT-001 | TEST-014 |
+| Bulk size bounds (0/>100→400) | 017 | 017 | 013 | UNIT-001 | TEST-015 |
+| Bulk N-token rate limit (429) | 019 | 018 | 014 | UNIT-001 | TEST-016 |
+| UI expiry picker sends/omits expiresAt | 020 | 019 | 016 | UNIT-002 | TEST-017,018 |
+
+### 7.6 Open questions (Phase 2)
+
+N/A — derived from approved Phase 2 requirements/architecture (defaults D1–D9).

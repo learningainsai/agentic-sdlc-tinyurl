@@ -1,13 +1,26 @@
 <!-- template_id: security-review-template.md -->
 <!-- v2 §4 mandatory template. Enforced by security-standard (§6); part of release readiness. -->
 
-# Security Review — run-20260801T232309Z (TinyURL Phase 1 MVP)
+# Security Review — run-20260802T150051Z (TinyURL Phase 2 — expiry + bulk creation)
 
 - **template_id**: security-review-template.md
-- **run_id**: run-20260801T232309Z
-- **status**: approved
+- **run_id**: run-20260802T150051Z
+- **status**: passed
+- **supersedes**: run-20260801T232309Z (Phase 1 MVP) security review
 
 ## 1. Findings (required)
+
+### Phase 2 findings (this run)
+
+| SEC id | Area | Severity | Finding | Status | Evidence |
+|--------|------|----------|---------|--------|----------|
+| SEC-010 | availability / DoS | — | Bulk create bounded to 1–100 items (`@Valid @Size`) and gated by a shared N-token rate limiter that reserves one token per item; an over-budget batch is rejected wholesale (429) and creates nothing (ADR-014). Mitigates request-amplification DoS (A05, RISK-011). | resolved | LinkControllerTest (429/400), RateLimiter |
+| SEC-011 | input-validation | — | Optional `expiresAt` parsed as a strict ISO instant; a past/present value is rejected (400, `InvalidExpiryException`) at create and per-item in bulk. No unvalidated user value reaches persistence. | resolved | LinkServiceTest (TEST-010/011/016b) |
+| SEC-012 | access-control | — | Lazy expiry makes an expired alias resolve to 404 (ADR-011) and the alias stays permanently reserved (ADR-015), preventing reuse/takeover of an expired code. | resolved | LinkServiceTest (TEST-012/013) |
+| SEC-013 | error-handling | — | Bulk returns structured per-item error codes (`INVALID_URL/INVALID_ALIAS/ALIAS_TAKEN/INVALID_EXPIRY/ERROR`) with no stack traces or internal detail; batch-level errors use the uniform `ErrorResponse`. | resolved | BulkItemResult, GlobalExceptionHandler |
+| SEC-014 | frontend-xss | — | The new expiry value is rendered via Angular interpolation with the `date` pipe (no `innerHTML`/`bypassSecurityTrust`); the `datetime-local` value is converted, not echoed as HTML. | resolved | shorten.component.html |
+
+### Phase 1 findings (baseline)
 
 | SEC id | Area | Severity | Finding | Status | Evidence |
 |--------|------|----------|---------|--------|----------|
@@ -30,10 +43,12 @@
 
 ## 3. Traceability (required)
 
-- SEC-001 ↔ REQ-005/010 · SEC-002 ↔ ADR-003 · SEC-003 ↔ ADR-005 · SEC-004 ↔ REQ-009/RISK-004 ·
-  SEC-005 ↔ REQ-006 · SEC-006 ↔ ADR-001 · SEC-007 ↔ UNIT-002 · SEC-008 ↔ UNIT-002.
+- **Phase 2**: SEC-010 ↔ REQ-014..017/ADR-013/014 · SEC-011 ↔ REQ-012/ADR-012 · SEC-012 ↔ REQ-013/ADR-011/015 · SEC-013 ↔ REQ-016 · SEC-014 ↔ REQ-020/ADR-016.
+- **Phase 1 baseline**: SEC-001 ↔ REQ-005/010 · SEC-002 ↔ ADR-003 · SEC-003 ↔ ADR-005 · SEC-004 ↔ REQ-009/RISK-004 · SEC-005 ↔ REQ-006 · SEC-006 ↔ ADR-001 · SEC-007 ↔ UNIT-002 · SEC-008 ↔ UNIT-002.
 
 ## 4. Unresolved risks (required)
 
-- No unresolved high/critical findings. SEC-004 and SEC-007 are **accepted low-severity** items for the
-  Phase 1 MVP (single-instance rate limiting; dev-only toolchain advisories). Gate not blocked (§7).
+- No unresolved high/critical findings. Phase 2 introduces no new high-severity risk; bulk DoS is
+  mitigated (SEC-010). SEC-004 and SEC-007 remain **accepted low-severity** baseline items
+  (single-instance rate limiting; dev-only toolchain advisories). RISK-012 (no expired-row reaper) is
+  **accepted**. Gate not blocked (§7).

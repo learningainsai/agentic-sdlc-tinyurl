@@ -1,0 +1,41 @@
+run_id: run-20260802T150051Z
+node_id: release-readiness
+action_id: release-readiness-go-approval
+classification: release_decision
+high_impact: false
+decision: approved
+approved_by: human
+approved_verbatim: "Go"
+timestamp: 2026-08-02T16:33:13Z
+intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+scope: >
+  Authorizes the release-readiness node for Phase 2 (expiry + bulk creation): enter the
+  release gate, record the readiness verdict, and close the run. This does not perform an
+  automated deploy; operations remains a human decision per workflow-graph.yaml.
+rationale:
+  - "Implementation, testing, and documentation nodes have all passed for run-20260802T150051Z."
+  - "Release package prepared: code review passed, security review resolved, release-readiness recommends ready."
+traceability_ids:
+  - REQ-011
+  - REQ-012
+  - REQ-013
+  - REQ-014
+  - REQ-015
+  - REQ-016
+  - REQ-017
+  - REQ-018
+  - REQ-019
+  - REQ-020
+  - REL-010
+  - REL-011
+  - REL-012
+  - REL-013
+  - REL-014
+  - REL-015
+  - REL-016
+  - REL-017
+  - REL-018
+  - REL-019
+conditions:
+  - "No automated deploy is executed by this approval."
+  - "The release-readiness entry and exit gates must be logged in the audit trail."

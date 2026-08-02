@@ -51,3 +51,39 @@ before release. Covers UNIT-001 (backend API) and UNIT-002 (frontend UI), and th
 | Security validation | 004,009,010 | 004,009,010 | UNIT-001 | TEST-003,004 |
 | Performance validation | 005,008 | 005,008 | UNIT-001 | TEST-005,006 |
 | Usability/accessibility | 007 | 007 | UNIT-002 | TEST-008,009 |
+
+---
+
+## 6. Phase 2 QA — Expiry + Bulk creation (run-20260802T150051Z)
+
+### 6.1 Scope
+Validate REQ-011..REQ-020 across UNIT-001 (backend expiry + bulk) and UNIT-002 (frontend expiry
+picker) before release: expiry storage/validation, lazy expiry (expired→404), expired-alias
+reservation, bulk endpoint (partial success, bounds, N-token rate limiting), and the UI picker.
+
+### 6.2 ISO 25010 (Phase 2)
+| Characteristic | Validation approach |
+|----------------|---------------------|
+| Functional suitability | TEST-010..018 map to REQ-011..020 |
+| Security | bulk cap + N-token limit (no rate-limit bypass); per-item validation; expiry→404 no existence leak; no medium+ unresolved SEC findings |
+| Performance efficiency | redirect p95 ≤ 100 ms unchanged (single in-memory expiry compare); bulk bounded ≤100 items |
+| Reliability | best-effort partial success; consistent ErrorResponse 400/404/409/429 |
+| Maintainability | shared RateLimiter refactor keeps paths DRY; ≥80% coverage on new code |
+
+### 6.3 Quality gates (Phase 2)
+- **Entry (testing)**: implementation complete for the unit; Phase 2 unit tests present; code review
+  approved; build green; Phase 1 regression suite green.
+- **Exit**: 100% of REQ-011..020 acceptance criteria pass; no critical/high defects; coverage
+  thresholds met; redirect performance unchanged; zero critical security vulnerabilities; bulk cannot
+  bypass rate limiting.
+- **Escalation**: any unmet criterion blocks the testing/release-readiness gate and returns the unit
+  to construction with a logged defect; orchestrator raises a human decision point.
+
+### 6.4 Traceability (Phase 2)
+| QA item | REQ | US | UNIT | TEST |
+|---------|-----|----|------|------|
+| Functional acceptance | 011–020 | 011–019 | UNIT-001/002 | TEST-010..018 |
+| Security validation | 017,019 | 017,018 | UNIT-001 | TEST-015,016 |
+| Performance validation | 013 | 013 | UNIT-001 | TEST-011 |
+| Reliability (partial success) | 016 | 016 | UNIT-001 | TEST-014 |
+| Usability (expiry picker) | 020 | 019 | UNIT-002 | TEST-017,018 |

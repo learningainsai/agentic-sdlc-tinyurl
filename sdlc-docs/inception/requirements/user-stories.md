@@ -134,6 +134,126 @@ Roles: **Visitor** (anonymous end user who shortens/clicks links).
 ### Traceability
 - Parent requirement(s): REQ-010 · Related units: UNIT-001
 
+---
+
+# Phase 2 — Expiry + Bulk creation (run-20260802T150051Z)
+
+Additive stories restating approved REQ-011..REQ-020 (defaults D1–D9 confirmed by the human).
+New role: **Operator** (integrator/script creating many links via the API).
+
+## US-011 — Set an optional expiry on a short link (REQ-011)
+
+> As a **Visitor**, I want **to optionally set when my short link expires**, so that **it stops working
+> after a date I choose**.
+
+### Acceptance criteria
+- [ ] Given a valid create request with an ISO-8601 UTC `expiresAt`, when I submit, then the link is
+      stored with that expiry and the response echoes `expiresAt`.
+- [ ] Given no `expiresAt`, when I submit, then the link never expires (Phase 1 behavior unchanged).
+
+### Traceability
+- Parent requirement(s): REQ-011 · Related units: UNIT-001
+
+## US-012 — Reject an expiry that is not in the future (REQ-012)
+
+> As a **Visitor**, I want **a clear error if I pick an expiry in the past**, so that **I don't create a
+> link that is born expired**.
+
+### Acceptance criteria
+- [ ] Given `expiresAt` ≤ now (UTC), when I submit, then I get HTTP 400 and no link is created.
+
+### Traceability
+- Parent requirement(s): REQ-012 · Related units: UNIT-001
+
+## US-013 — Expired links stop redirecting (REQ-013)
+
+> As a **Visitor/Operator**, I want **an expired short link to stop working**, so that **it no longer
+> sends people to the destination**.
+
+### Acceptance criteria
+- [ ] Given a link with `expiresAt` ≤ now, when `GET /{code}` is requested, then I receive HTTP 404
+      (identical to an unknown code; existence is not leaked).
+- [ ] Given `expiresAt` null or in the future, when requested, then redirect works per REQ-005.
+
+### Traceability
+- Parent requirement(s): REQ-013 · Related units: UNIT-001
+
+## US-014 — Expired aliases are not reused (REQ-014)
+
+> As an **Operator**, I want **an expired alias to stay reserved**, so that **an old link's alias can't
+> silently point somewhere new**.
+
+### Acceptance criteria
+- [ ] Given an expired link, when a later create requests the same alias, then it is rejected (409) and
+      the expired row is retained.
+
+### Traceability
+- Parent requirement(s): REQ-014 · Related units: UNIT-001
+
+## US-015 — Create many links in one request (REQ-015)
+
+> As an **Operator**, I want **to submit many URLs at once**, so that **I can shorten links in bulk
+> without one request each**.
+
+### Acceptance criteria
+- [ ] Given `POST /api/links/bulk` with a JSON array of `{ url, alias?, expiresAt? }`, when submitted,
+      then I receive an ordered array of per-item results.
+
+### Traceability
+- Parent requirement(s): REQ-015 · Related units: UNIT-001
+
+## US-016 — Bulk succeeds partially with per-item results (REQ-016, REQ-018)
+
+> As an **Operator**, I want **valid items to succeed even when some fail**, so that **one bad URL
+> doesn't waste the whole batch**.
+
+### Acceptance criteria
+- [ ] Given a batch with valid and invalid items, when processed, then valid items are created and each
+      result reports success (code + short URL + `expiresAt`) or an error (index + reason + code).
+- [ ] Given two items requesting the same alias, when processed, then at most one succeeds and the
+      other reports a taken-alias error.
+
+### Traceability
+- Parent requirement(s): REQ-016, REQ-018 · Related units: UNIT-001
+
+## US-017 — Bulk requests are bounded (REQ-017)
+
+> As a **service operator**, I want **bulk requests capped in size**, so that **the service resists
+> abuse and overload**.
+
+### Acceptance criteria
+- [ ] Given a bulk request with 0 or >100 items, when submitted, then I get HTTP 400 and nothing is
+      created; 1–100 items are accepted.
+
+### Traceability
+- Parent requirement(s): REQ-017 · Related units: UNIT-001
+
+## US-018 — Bulk cannot bypass rate limiting (REQ-019)
+
+> As a **service operator**, I want **bulk to consume rate-limit budget per item**, so that **bulk
+> can't sidestep per-IP limits**.
+
+### Acceptance criteria
+- [ ] Given per-IP rate limiting, when a bulk request of N items is processed, then it consumes N
+      tokens; when the budget is exhausted, remaining items receive a rate-limit error (or 429 per the
+      architecture decision).
+
+### Traceability
+- Parent requirement(s): REQ-019 · Related units: UNIT-001
+
+## US-019 — Choose an expiry from the web UI (REQ-020)
+
+> As a **Visitor**, I want **an optional expiry picker on the form**, so that **I can set an expiry
+> without using the API**.
+
+### Acceptance criteria
+- [ ] Given the submission form, when I optionally pick an expiry and submit, then it is sent as
+      `expiresAt` and the created link's expiry is shown; leaving it blank creates a never-expiring
+      link. Bulk creation is not exposed in the UI in Phase 2.
+
+### Traceability
+- Parent requirement(s): REQ-020 · Related units: UNIT-002
+
 ## Notes / open questions
 
-N/A — stories restate approved requirements; no open questions.
+Phase 1: N/A. Phase 2: open questions resolved by human approval "Accept all defaults" (D1–D9).

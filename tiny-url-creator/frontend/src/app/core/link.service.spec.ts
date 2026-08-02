@@ -49,6 +49,17 @@ describe('LinkService', () => {
     req.flush({ code: 'promo', shortUrl: 'x', originalUrl: 'y' });
   });
 
+  it('includes an optional expiration timestamp in the request body', () => {
+    service.createLink({ url: 'https://example.com', expiresAt: '2026-09-01T10:00:00Z' }).subscribe();
+
+    const req = httpMock.expectOne('/api/links');
+    expect(req.request.body).toEqual({
+      url: 'https://example.com',
+      expiresAt: '2026-09-01T10:00:00Z',
+    });
+    req.flush({ code: 'promo', shortUrl: 'x', originalUrl: 'y', expiresAt: '2026-09-01T10:00:00Z' });
+  });
+
   it('surfaces the backend message on a 409 conflict', (done) => {
     service.createLink({ url: 'https://example.com', alias: 'taken' }).subscribe({
       error: (error: Error) => {

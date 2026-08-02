@@ -1,0 +1,90 @@
+run_id: run-20260802T150051Z
+node_id: plan
+phase: inception
+from_agent: inception
+to_agents: [construction]
+status: passed
+intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+input_artifacts:
+  - sdlc-docs/inception/requirements/requirements.md
+  - sdlc-docs/inception/requirements/user-stories.md
+  - sdlc-docs/inception/architecture-design/architecture-design.md
+  - sdlc-docs/construction/units/unit-registry.yaml
+output_artifacts:
+  - sdlc-docs/inception/plan/project-plan.md
+  - sdlc-docs/inception/plan/issues-checklist.md
+  - sdlc-docs/inception/plan/test-strategy.md
+  - sdlc-docs/inception/plan/test-issues-checklist.md
+  - sdlc-docs/inception/plan/qa-plan.md
+template_ids:
+  - project-plan-template.md
+  - issues-checklist-template.md
+  - test-strategy-template.md
+  - test-issues-checklist-template.md
+  - qa-plan-template.md
+standards_applied:
+  - documentation-standard
+  - testing-standard
+required_skills_run:
+  - breakdown-plan
+  - breakdown-test
+traceability_ids:
+  - EPIC-2
+  - FEAT-5
+  - FEAT-6
+  - FEAT-7
+  - EN-5
+  - EN-6
+  - EN-7
+  - EN-8
+  - TEST-010
+  - TEST-011
+  - TEST-012
+  - TEST-013
+  - TEST-014
+  - TEST-015
+  - TEST-016
+  - TEST-017
+  - TEST-018
+decisions_made:
+  - "EPIC-2 = Link lifecycle & bulk creation; FEAT-5 expiry, FEAT-6 bulk, FEAT-7 expiry UI."
+  - "Enablers: EN-5 (expires_at column + migration + lazy expiry), EN-6 (bulk DTOs+endpoint), EN-7 (shared RateLimiter + N-token), EN-8 (UI expiry picker)."
+  - "Tests: TEST-010..016 backend expiry+bulk (clock-injected boundaries); TEST-017..018 UI expiry; Phase 1 regression must stay green."
+  - "Critical path: EN-5 -> expiry stories; EN-6 -> bulk stories -> EN-7 -> US-018."
+approvals:
+  - by: human
+    decision: approved
+    verbatim: "Approve"
+    scope: "plan exit gate (Phase 2 breakdown-plan + breakdown-test); unblocks construction"
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/plan/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/plan/exit-evidence.md
+validation_evidence:
+  - "Template compliance: all five plan templates present with Phase 2 sections."
+  - "Required skills: breakdown-plan and breakdown-test both produced Phase 2 outputs."
+  - "Testing-standard: ISTQB techniques + ISO 25010 deltas + coverage targets defined for REQ-011..020."
+open_questions: []
+risks:
+  - id: RISK-011
+    severity: medium
+    description: "Bulk DoS amplification. Mitigated by max-100 cap + per-IP N-token limiting (EN-7)."
+    status: mitigated
+  - id: RISK-012
+    severity: low
+    description: "Expired rows retained (no reaper) => table growth. Cleanup deferred."
+    status: accepted
+  - id: RISK-013
+    severity: low
+    description: "Best-effort bulk partial success requires per-item inspection. Mitigated by explicit per-item error codes."
+    status: mitigated
+compensating_actions: []
+next_ready_nodes: [implementation]
+construction_unblocked: true
+context_summary: >
+  Phase 2 plan approved by the human ('Approve'), completing inception. breakdown-plan produced
+  EPIC-2 (FEAT-5 expiry, FEAT-6 bulk, FEAT-7 expiry UI) with stories US-011..019 and enablers EN-5..8;
+  breakdown-test produced the Phase 2 test strategy, test issues, and QA plan (TEST-010..018) with
+  clock-injected expiry boundary testing, bulk partial-success/bounds/rate-limit coverage, per-item
+  validation parity, and a mandatory Phase 1 regression pass. Intake INTAKE-20260802T150051Z is now
+  construction_unblocked: true. Construction may build UNIT-001 (backend) and UNIT-002 (frontend)
+  concurrently (disjoint target files). Next: implementation.

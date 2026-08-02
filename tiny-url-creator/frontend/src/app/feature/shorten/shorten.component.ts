@@ -27,6 +27,7 @@ export class ShortenComponent {
   readonly form: FormGroup = this.fb.group({
     url: ['', [Validators.required, Validators.pattern(/^https?:\/\/.+/i)]],
     alias: ['', [Validators.pattern(/^[A-Za-z0-9_-]{3,30}$/)]],
+    expiresAt: [''],
   });
 
   readonly result = signal<LinkResponse | null>(null);
@@ -44,9 +45,14 @@ export class ShortenComponent {
     this.result.set(null);
     this.copied.set(false);
 
-    const { url, alias } = this.form.getRawValue();
+    const { url, alias, expiresAt } = this.form.getRawValue();
     this.linkService
-      .createLink({ url: url ?? '', alias: alias || undefined })
+      .createLink({
+        url: url ?? '',
+        alias: alias || undefined,
+        // datetime-local is local wall-clock; convert to an absolute UTC instant (ADR-016).
+        expiresAt: this.toUtcInstant(expiresAt),
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
@@ -58,6 +64,15 @@ export class ShortenComponent {
           this.submitting.set(false);
         },
       });
+  }
+
+  /** Converts a `datetime-local` value (local time, no zone) to a UTC ISO-8601 instant, or undefined. */
+  private toUtcInstant(localDateTime: string | null | undefined): string | undefined {
+    if (!localDateTime) {
+      return undefined;
+    }
+    const parsed = new Date(localDateTime);
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
   }
 
   async copy(): Promise<void> {

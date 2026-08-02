@@ -16,6 +16,16 @@
     ],
     "preToolUse": [
       {
+        "name": "intake-gate",
+        "description": "Blocks construction edits to product source until a new idea has traversed inception (new-work intake enforcement).",
+        "run": ".github/hooks/scripts/intake-gate.sh"
+      },
+      {
+        "name": "inception-skill-gate",
+        "description": "Blocks drafting requirements/user-stories until the idea-refiner report exists (auto-invokes idea-refiner on every inception trigger).",
+        "run": ".github/hooks/scripts/inception-skill-gate.sh"
+      },
+      {
         "name": "gate-check",
         "description": "Blocks high-impact / gated actions until policy checks pass and human confirmation is recorded.",
         "run": ".github/hooks/scripts/gate-check.sh"

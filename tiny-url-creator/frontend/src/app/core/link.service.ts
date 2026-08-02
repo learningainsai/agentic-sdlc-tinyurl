@@ -20,6 +20,9 @@ export class LinkService {
     if (request.alias) {
       body.alias = request.alias;
     }
+    if (request.expiresAt) {
+      body.expiresAt = request.expiresAt;
+    }
     return this.http
       .post<LinkResponse>(this.endpoint, body)
       .pipe(catchError((error: HttpErrorResponse) => throwError(() => this.toMessage(error))));

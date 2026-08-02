@@ -1,0 +1,77 @@
+run_id: run-20260802T150051Z
+node_id: requirements
+phase: inception
+from_agent: inception
+to_agents: [inception]
+status: passed
+intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+input_artifacts: []
+output_artifacts:
+  - sdlc-docs/inception/requirements/idea-refinement.md
+  - sdlc-docs/inception/requirements/requirements.md
+  - sdlc-docs/inception/requirements/user-stories.md
+template_ids:
+  - requirements-template.md
+  - user-story-template.md
+standards_applied:
+  - documentation-standard
+traceability_ids:
+  - REQ-011
+  - REQ-012
+  - REQ-013
+  - REQ-014
+  - REQ-015
+  - REQ-016
+  - REQ-017
+  - REQ-018
+  - REQ-019
+  - REQ-020
+decisions_made:
+  - "Exit-gate approval (human, verbatim): 'Accept all defaults' — confirms D1–D9."
+  - "D1 confirmed: expired code returns HTTP 404 (existence not leaked)."
+  - "D2 confirmed: expiry is an optional absolute UTC instant (expiresAt, ISO-8601); null = never expires."
+  - "D3 confirmed: expiresAt <= now at creation is rejected with HTTP 400."
+  - "D4 confirmed: expired alias/code permanently reserved; lazy expiry, no reaper job."
+  - "D5 confirmed: bulk is a new endpoint POST /api/links/bulk accepting a JSON array."
+  - "D6 confirmed: best-effort partial success with per-item results (not all-or-nothing)."
+  - "D7 confirmed: max 100 items per bulk request; 0 or >100 => HTTP 400."
+  - "D8 confirmed: a bulk request consumes N rate-limit tokens (one per item)."
+  - "D9 confirmed: add optional expiry picker to the UI; bulk stays API-only in Phase 2."
+approvals:
+  - by: human
+    decision: approved
+    verbatim: "Accept all defaults"
+    scope: "requirements exit gate (Phase 2 REQ-011..REQ-020, defaults D1–D9)"
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/requirements/exit-evidence.md
+validation_evidence:
+  - "Template compliance: requirements-template.md required sections present (Phase 2 §8 added additively)."
+  - "Template compliance: user-story-template.md materialized (US-011..US-019 -> REQ-011..REQ-020)."
+  - "Required-skill: idea-refiner report present and references intake INTAKE-20260802T150051Z-expiry-and-bulk-creation."
+  - "Content validation: Phase 2 open questions resolved by recorded human decision 'Accept all defaults'."
+open_questions: []
+risks:
+  - id: RISK-011
+    severity: medium
+    description: "Bulk creation is a DoS amplification vector. Mitigated by max-100 cap enforced before processing (REQ-017) and N-token rate limiting (REQ-019)."
+    status: mitigated
+  - id: RISK-012
+    severity: low
+    description: "Expired rows are retained indefinitely (no reaper, D4). Unbounded table growth over time. Accepted for Phase 2; a cleanup job is a future enhancement."
+    status: accepted
+  - id: RISK-013
+    severity: low
+    description: "Best-effort bulk partial success (D6) means callers must inspect per-item results; a naive client may miss item-level errors. Mitigated by explicit per-item error codes in the response contract."
+    status: mitigated
+compensating_actions: []
+next_ready_nodes: [architecture-design]
+context_summary: >
+  Phase 2 requirements for the TinyURL shortener approved by the human ("Accept all defaults", D1–D9).
+  Two capabilities: (1) an optional nullable expiry (absolute UTC instant) on a short link, enforced
+  lazily at redirect time — expired links return 404, past/now expiry at creation returns 400, expired
+  aliases stay permanently reserved; and (2) bulk creation via a new POST /api/links/bulk endpoint that
+  accepts a JSON array (1–100 items) of {url, alias?, expiresAt?}, applies best-effort partial success
+  with per-item results, and consumes N per-IP rate-limit tokens. Ten new requirements
+  (REQ-011..REQ-020) with testable acceptance criteria; a nullable expires_at column is the only schema
+  change; UI adds an optional expiry picker (bulk is API-only). Likely impacts UNIT-001 (backend) and
+  UNIT-002 (frontend). Next: architecture-design (high-impact — requires durable human confirmation).

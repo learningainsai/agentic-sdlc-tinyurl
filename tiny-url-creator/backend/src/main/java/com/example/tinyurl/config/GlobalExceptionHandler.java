@@ -4,6 +4,7 @@ import com.example.tinyurl.dto.ErrorResponse;
 import com.example.tinyurl.service.AliasAlreadyExistsException;
 import com.example.tinyurl.service.CodeNotFoundException;
 import com.example.tinyurl.service.InvalidAliasException;
+import com.example.tinyurl.service.InvalidExpiryException;
 import com.example.tinyurl.service.InvalidUrlException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,7 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler({InvalidUrlException.class, InvalidAliasException.class})
+    @ExceptionHandler({InvalidUrlException.class, InvalidAliasException.class, InvalidExpiryException.class})
     public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException ex) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
@@ -39,6 +40,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CodeNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFound(CodeNotFoundException ex) {
         return build(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ErrorResponse> handleRateLimited(RateLimitExceededException ex) {
+        return build(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage());
     }
 
     private ResponseEntity<ErrorResponse> build(HttpStatus status, String message) {
