@@ -1,0 +1,61 @@
+run_id: run-20260801T232309Z
+node_id: requirements
+phase: inception
+from_agent: inception
+to_agents: [inception]
+status: passed
+input_artifacts: []
+output_artifacts:
+  - sdlc-docs/inception/requirements/idea-refinement.md
+  - sdlc-docs/inception/requirements/requirements.md
+  - sdlc-docs/inception/requirements/user-stories.md
+template_ids:
+  - requirements-template.md
+  - user-story-template.md
+standards_applied:
+  - documentation-standard
+traceability_ids:
+  - REQ-001
+  - REQ-002
+  - REQ-003
+  - REQ-004
+  - REQ-005
+  - REQ-006
+  - REQ-007
+  - REQ-008
+  - REQ-009
+  - REQ-010
+decisions_made:
+  - "Exit-gate approval (human, verbatim): 'Reviewed default recomendations and approve'."
+  - "A1 confirmed: accept http/https schemes only."
+  - "A2 confirmed: custom-alias pattern ^[A-Za-z0-9_-]{3,30}$ + reserved words."
+  - "A3 confirmed: alias collision rejected with HTTP 409."
+  - "A4 confirmed: redirect uses HTTP 302 (Found)."
+  - "A5 confirmed: duplicate long URL without alias mints a new code."
+  - "A6 confirmed: anonymous/public creation, no auth in MVP."
+  - "A7 confirmed: rate limiting + max URL length (2048) in scope."
+  - "A8 confirmed: submission UI shows single result + copy control."
+approvals: []
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260801T232309Z/requirements/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260801T232309Z/requirements/exit-evidence.md
+validation_evidence:
+  - "Template compliance: requirements-template.md required sections present."
+  - "Template compliance: user-story-template.md materialized as user-stories.md (US-001..US-010 -> REQ-001..REQ-010)."
+  - "Content validation: open_questions resolved by recorded human decision."
+open_questions: []
+risks:
+  - id: RISK-001
+    severity: medium
+    description: "Public anonymous shortener is an abuse vector (phishing/malware). Mitigated in MVP by scheme allowlist, max length, per-IP rate limiting, and self-domain rejection."
+    status: mitigated
+compensating_actions: []
+next_ready_nodes: [architecture-design]
+context_summary: >
+  Phase 1 MVP requirements for a TinyURL URL shortener approved by the user with all eight
+  recommended defaults confirmed. Scope: shorten a URL with/without a custom alias, 302 redirect via
+  short code, and an Angular submission UI, on a Spring Boot + PostgreSQL stack. Ten requirements
+  (REQ-001..REQ-010) with testable acceptance criteria, plus security/perf NFRs (http/https only, max
+  2048 chars, per-IP rate limiting, no SSRF, Base62 7-char codes, unique-constraint + retry). Out of
+  scope: accounts, expiration/deletion, analytics, custom domains. Next: architecture-design
+  (high-impact, requires durable confirmation).

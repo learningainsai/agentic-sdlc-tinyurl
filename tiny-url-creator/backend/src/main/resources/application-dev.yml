@@ -1,0 +1,14 @@
+# Dev profile — PostgreSQL provided by docker-compose (tiny-url-creator/backend/docker-compose.yml).
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tinyurl
+    driver-class-name: org.postgresql.Driver
+    username: tinyurl
+    password: tinyurl
+  jpa:
+    hibernate:
+      # Auto-manage schema during development. Prod uses 'validate'.
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true

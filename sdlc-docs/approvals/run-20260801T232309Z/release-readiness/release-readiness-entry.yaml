@@ -1,0 +1,9 @@
+run_id: run-20260801T232309Z
+node_id: release-readiness
+action_id: release-readiness-entry
+classification: critical_design
+agent_rationale: "Release-readiness is a human decision point (entry_gate approval: required, operations: human_decision). Entering it authorizes the security review, code review, and readiness assessment. Recorded for durable lineage per governance."
+approved_by: user
+decision: approved
+timestamp: 2026-08-02T00:00:00Z
+raw_user_response: "Approve"

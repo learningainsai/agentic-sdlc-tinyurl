@@ -5,7 +5,7 @@
 
 The orchestrator drives an explicit DAG (`.github/sdlc/workflow-graph.yaml`) across two phases:
 
-- **Inception** — single-threaded, human-gated: `requirements` → `architecture-design` → `unit-decomposition`.
+- **Inception** — single-threaded, human-gated: `requirements` → `architecture-design` → `unit-decomposition` → `plan`. The `plan` node produces the MANDATORY breakdown deliverables (`breakdown-plan` skill) under `sdlc-docs/inception/plan/`.
 - **Construction** — multi-agent, concurrent autonomy by independent unit: `implementation` → (`testing` ∥ `documentation`) → `release-readiness`.
 
 ## Invariants

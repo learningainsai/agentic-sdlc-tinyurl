@@ -1,0 +1,9 @@
+run_id: run-20260801T232309Z
+node_id: architecture-design
+action_id: architecture-design-approval
+classification: critical_design
+agent_rationale: "Fixes core architecture, public API contract, persistence data model, code-generation scheme, and redirect semantics for the whole product; expensive to change later and shapes security posture."
+approved_by: user
+decision: approved
+timestamp: 2026-08-02T00:00:00Z
+raw_user_response: "confirm"

@@ -7,6 +7,8 @@
 #
 # Semantics (v1):
 #   phase:        inception (single-threaded, human-gated) | construction (multi-agent, concurrent)
+#                 inception sequence: requirements -> architecture-design -> unit-decomposition -> plan
+#                 (plan produces the MANDATORY breakdown deliverables under sdlc-docs/inception/plan/)
 #   depends_on:   node ids that must reach `passed` exit gate before this node may start
 #   parallel:     true => may run concurrently with siblings sharing the same depends_on set
 #   entry_gate/exit_gate:
@@ -169,12 +171,45 @@ nodes:
       path: "sdlc-docs/handoffs/{run_id}/{node_id}.yaml"
     policy_evidence_path: "sdlc-docs/policy-evidence/{run_id}/{node_id}/"
 
+  - id: plan
+    phase: inception
+    agent: inception
+    parallel: false
+    depends_on: [unit-decomposition]
+    # v2 §5 — breakdown-plan produces the mandatory inception plan; breakdown-test produces the
+    # mandatory inception test strategy / QA plan so testing is planned before construction.
+    required_skills: [breakdown-plan, breakdown-test]
+    templates:
+      - project-plan-template.md
+      - issues-checklist-template.md
+      - test-strategy-template.md
+      - test-issues-checklist-template.md
+      - qa-plan-template.md
+    standards: [documentation-standard, testing-standard]
+    input_artifacts:
+      - sdlc-docs/inception/requirements/requirements.md
+      - sdlc-docs/inception/requirements/user-stories.md
+      - sdlc-docs/inception/architecture-design/architecture-design.md
+      - sdlc-docs/construction/units/unit-registry.yaml
+    output_artifacts:
+      - sdlc-docs/inception/plan/project-plan.md
+      - sdlc-docs/inception/plan/issues-checklist.md
+      - sdlc-docs/inception/plan/test-strategy.md
+      - sdlc-docs/inception/plan/test-issues-checklist.md
+      - sdlc-docs/inception/plan/qa-plan.md
+    entry_gate: { approval: none, policy: [change-control] }
+    exit_gate:  { approval: required, policy: [compliance] }
+    handoff:
+      required: true
+      path: "sdlc-docs/handoffs/{run_id}/{node_id}.yaml"
+    policy_evidence_path: "sdlc-docs/policy-evidence/{run_id}/{node_id}/"
+
   # ---------------- CONSTRUCTION (multi-agent, concurrent autonomy) ----------------
   - id: implementation
     phase: construction
     agent: construction
     parallel: true
-    depends_on: [architecture-design, unit-decomposition]
+    depends_on: [architecture-design, unit-decomposition, plan]
     high_impact: true               # building core features => durable confirmation (§8)
     templates: [functional-design-template.md, implementation-plan-template.md]
     standards: [coding-standard, security-standard]

@@ -1,0 +1,15 @@
+# Prod profile — PostgreSQL configured entirely via environment variables (no secrets in source).
+spring:
+  datasource:
+    url: ${DB_URL}
+    driver-class-name: org.postgresql.Driver
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      # Never mutate the schema automatically in production; validate against migrations instead.
+      ddl-auto: validate
+
+app:
+  # Public base URL used to build returned short URLs; must be set per environment.
+  base-url: ${APP_BASE_URL}

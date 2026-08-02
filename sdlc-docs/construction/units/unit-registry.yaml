@@ -1,20 +1,35 @@
 # Unit Registry (v2 §3)
 # Produced by the `unit-decomposition` node; consumed by `implementation` for parallel scheduling.
 # Schema: .github/sdlc/schemas/unit-registry.schema.md
-# This is an empty seed. The inception phase populates `units` from unit-decomposition-template.md.
 
-run_id: ""
+run_id: run-20260801T232309Z
 generated_by: unit-decomposition
-units: []
-#  - unit_id: UNIT-001
-#    name: ""
-#    owner_agent: construction
-#    depends_on_units: []
-#    requirements: []          # REQ-...
-#    design_refs: []           # ADR-...
-#    target_files: []          # conflict basis; concurrent units must not overlap
-#    expected_tests: []        # TEST-...
-#    documentation_refs: []    # DOC-...
-#    risk_level: low           # low | medium | high
-#    high_impact: false        # true => durable approval required (§8)
-#    status: pending           # pending | in_progress | passed | failed | blocked
+units:
+  - unit_id: UNIT-001
+    name: Backend URL-shortener API
+    owner_agent: construction
+    depends_on_units: []
+    requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-008, REQ-009, REQ-010]
+    design_refs: [ADR-001, ADR-003, ADR-004, ADR-005, ADR-006, ADR-007, ADR-008, ADR-009]
+    target_files: ["tiny-url-creator/backend/**"]
+    expected_tests: [TEST-001, TEST-002, TEST-003, TEST-004, TEST-005, TEST-006, TEST-007]
+    documentation_refs: [DOC-001]
+    risk_level: medium
+    high_impact: false
+    status: passed
+    plan_ref: PLAN-001
+    test_evidence: "mvn verify: 18 unit tests + 1 integration test (LinkFlowIT) passed; BUILD SUCCESS"
+  - unit_id: UNIT-002
+    name: Frontend submission UI
+    owner_agent: construction
+    depends_on_units: []
+    requirements: [REQ-007]
+    design_refs: [ADR-002]
+    target_files: ["tiny-url-creator/frontend/**"]
+    expected_tests: [TEST-008, TEST-009]
+    documentation_refs: [DOC-002]
+    risk_level: low
+    high_impact: false
+    status: passed
+    plan_ref: PLAN-002
+    test_evidence: "ng test (ChromeHeadless): 6 specs passed incl. TEST-008/TEST-009; ng build: bundle generation complete"
