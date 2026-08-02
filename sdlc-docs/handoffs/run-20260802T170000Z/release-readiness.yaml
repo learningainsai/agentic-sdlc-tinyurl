@@ -1,0 +1,40 @@
+run_id: run-20260802T170000Z
+node_id: release-readiness
+phase: construction
+from_agent: construction
+to_agents: []
+status: passed
+input_artifacts:
+  - sdlc-docs/handoffs/run-20260802T170000Z/implementation.yaml
+  - sdlc-docs/handoffs/run-20260802T170000Z/testing.yaml
+  - sdlc-docs/handoffs/run-20260802T170000Z/code-review.yaml
+  - sdlc-docs/handoffs/run-20260802T170000Z/documentation.yaml
+output_artifacts:
+  - sdlc-docs/release-readiness/release-readiness.md
+template_ids: [release-readiness-template.md]
+standards_applied: [security-standard, change-control-standard]
+traceability_ids: [REL-020, REL-021, REL-022, REL-023, REL-024, REL-025, REL-026, REL-027, REL-028, UNIT-001, RISK-023]
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/release-readiness/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/release-readiness/exit-evidence.md
+approvals:
+  - by: human
+    decision: approved
+    verbatim: "Go"
+    scope: "release-readiness go/no-go — GO (contingent on REL-027 short_link_seq provisioning); record: sdlc-docs/approvals/run-20260802T170000Z/release-readiness/release-readiness-go.yaml"
+validation_evidence:
+  - "All Phase 3 construction gates passed (implementation, testing, code-review, documentation)."
+  - "./mvnw -o verify BUILD SUCCESS: 31 unit + 5 IT, 0 failures; TEST-019 ≤10 stmts/50 items; TEST-020 contract preserved."
+  - "No blocking code-review or security findings; API contract unchanged."
+risks:
+  - "RISK-023 (open, condition on GO): prod ddl-auto:validate requires short_link_seq to exist before deploy — DBA must provision it. Dev/test create it automatically."
+decisions_made:
+  - "GO — run is releasable, contingent on REL-027 (short_link_seq provisioned in prod). Deploy is manual/out-of-band (S7, no automated deploy)."
+open_questions: []
+compensating_actions: []
+next_ready_nodes: []
+context_summary: >
+  Human GO recorded for Phase 3. All construction nodes passed, full suite green, bulk DB round-trip
+  target met (≤10 statements/50 items) with the API contract unchanged. Release is approved contingent
+  on the one operability precondition (RISK-023: prod short_link_seq sequence must be provisioned before
+  deploy). Deploy remains a manual, out-of-band human step — no automated deployment is configured.

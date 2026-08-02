@@ -1,0 +1,20 @@
+intake_id: INTAKE-20260802T170000Z-performance-improvement
+raw_request: "I want to improve performance"
+classification: enhancement          # finalized: backend performance optimization of POST /api/links/bulk DB-query pattern
+high_impact: true                    # confirmed at architecture-design: id-generation IDENTITY→SEQUENCE + JDBC batching (RISK-023)
+run_id: run-20260802T170000Z         # new run — re-planning vs. the completed Phase 2 run is a human decision (S5)
+entry_node: requirements
+current_phase: construction
+construction_unblocked: true         # inception complete: requirements + architecture-design + unit-decomposition + plan gates all passed
+created: 2026-08-02T17:00:00Z
+unblocked_at: 2026-08-02T17:40:00Z
+unblocked_by: plan-exit-gate (human 'Approve'; sdlc-docs/handoffs/run-20260802T170000Z/plan.yaml)
+notes: >
+  New work routed through the mandatory inception front door (COMMON-NEW-WORK-INTAKE-GATE).
+  The raw request "I want to improve performance" is untestable and unscoped as written: no
+  target metric, no component, no measurement method, no acceptance threshold. Per the workflow
+  new_work_policy, idea-refiner runs FIRST and its report (sdlc-docs/inception/requirements/
+  idea-refinement.md for this run) plus agreed answers to its open questions are required before
+  requirements.md may be drafted. No edits to tiny-url-creator/ (backend or frontend) are permitted
+  until this intake clears the plan gate. Scope is NOT folded into the completed run-20260802T150051Z;
+  it is a fresh run pending a human re-plan/go decision.

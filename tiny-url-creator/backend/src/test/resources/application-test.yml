@@ -8,3 +8,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+    properties:
+      hibernate:
+        # Expose Statistics so the bulk statement-count regression test can assert bounded round
+        # trips (TEST-019/REQ-024).
+        generate_statistics: true

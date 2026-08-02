@@ -1,0 +1,23 @@
+run_id: run-20260802T170000Z
+node_id: release-readiness
+action_id: release-readiness-go
+classification: critical-design
+high_impact: true
+decision: approved
+approved_by: human
+raw_user_response: "Go"
+approved_at: 2026-08-02T17:55:00Z
+summary: >
+  Human go/no-go for TinyURL Phase 3 (bulk DB-query optimization). GO granted — the run is releasable.
+  Deploy is manual/out-of-band (no automated deploy configured, S7).
+conditions:
+  - "REL-027 / RISK-023: the prod schema must contain the short_link_seq sequence before deploy, because
+     the prod profile runs ddl-auto:validate with no bundled migration tooling. GO is contingent on the
+     DBA provisioning it. Dev (update) and test (create-drop) create it automatically."
+evidence:
+  - sdlc-docs/release-readiness/release-readiness.md
+  - sdlc-docs/handoffs/run-20260802T170000Z/implementation.yaml
+  - sdlc-docs/handoffs/run-20260802T170000Z/testing.yaml
+  - sdlc-docs/handoffs/run-20260802T170000Z/code-review.yaml
+  - sdlc-docs/handoffs/run-20260802T170000Z/documentation.yaml
+traceability_ids: [REL-020, REL-021, REL-022, REL-023, REL-024, REL-025, REL-026, REL-027, REL-028, RISK-023]

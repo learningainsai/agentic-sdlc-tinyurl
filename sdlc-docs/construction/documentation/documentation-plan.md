@@ -1,12 +1,36 @@
 <!-- template_id: documentation-plan-template.md -->
 <!-- v2 §4 mandatory template. Enforced by documentation-standard (§6). -->
 
+# Documentation Plan — run-20260802T170000Z (TinyURL Phase 3 — bulk DB-query optimization)
+
+- **template_id**: documentation-plan-template.md
+- **run_id**: run-20260802T170000Z
+- **node_id**: documentation
+- **status**: passed
+- **supersedes**: run-20260802T150051Z (Phase 2) documentation plan
+
+## 0. Phase 3 documentation artifacts (required)
+
+| DOC id | Audience | Artifact | Location | Traces to |
+|--------|----------|----------|----------|-----------|
+| DOC-005 | developer / operator | Backend README — Phase 3 note: `POST /api/links/bulk` now uses a two-pass batched write (single `findExistingCodes` SELECT + batched `saveAll`), `ShortLink` uses a `short_link_seq` sequence, and Hibernate JDBC batching (`jdbc.batch_size: 50`) is enabled. **Operator caveat**: under `prod` `ddl-auto: validate`, `short_link_seq` must exist in the schema before deploy (RISK-023). API request/response contract is unchanged. | tiny-url-creator/backend/README.md | REQ-021..025 · UNIT-001 · ADR-017..021 |
+
+## 0a. Phase 3 freshness (required)
+
+- DOC-005 documents the code as built and verified this run (`./mvnw -o verify` green: 31 unit/slice
+  + 5 IT incl. TEST-019/020). The public API contract did not change, so no client-facing API doc
+  update is required beyond the operator batching/sequence note.
+- Regeneration trigger: update when `application.yml` batching keys, the id-generation strategy, or
+  the bulk algorithm (ADR-017..021) change.
+
+---
+
 # Documentation Plan — run-20260802T150051Z (TinyURL Phase 2 — expiry + bulk creation)
 
 - **template_id**: documentation-plan-template.md
 - **run_id**: run-20260802T150051Z
 - **node_id**: documentation
-- **status**: passed
+- **status**: passed (Phase 2 baseline)
 - **supersedes**: run-20260801T232309Z (Phase 1 MVP) documentation plan
 
 ## 1. Documentation artifacts (required)

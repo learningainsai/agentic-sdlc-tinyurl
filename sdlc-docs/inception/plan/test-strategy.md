@@ -160,3 +160,68 @@ N/A — derived from approved inception artifacts; no open questions.
 ### 7.6 Open questions (Phase 2)
 
 N/A — derived from approved Phase 2 requirements/architecture (defaults D1–D9).
+
+## 8. Phase 3 test strategy — Bulk-creation DB-query optimization (run-20260802T170000Z)
+
+- **skill**: breakdown-test · **sources**: REQ-021..025, ADR-017..021 (RISK-021..023),
+  project-plan.md §11, unit-registry.yaml (UNIT-001 Phase 3).
+
+### 8.1 Scope & objectives
+
+- **In scope**: the batched bulk persistence path — that an N-item batch issues a **bounded** number
+  of DB round trips (one consolidated existence `SELECT` + batched `INSERT`s rather than ~2·N
+  statements), and that the **observable behaviour and response contract are unchanged** for every
+  input class (all-valid, mixed valid/duplicate/invalid, intra-batch alias collision, bounds).
+- **Out of scope**: the API surface itself (unchanged), the frontend (no Phase 3 work), redirect path,
+  expiry logic. This is a **characterization / regression** effort, not new behaviour.
+- **Objectives**: prove REQ-021/024 (bounded round trips) and REQ-022/023 (byte-for-byte identical
+  responses, partial success preserved) with automated tests; keep the full existing suite green;
+  zero new high/critical security findings (no new attack surface).
+
+### 8.2 ISTQB techniques (Phase 3)
+
+- **Characterization testing**: capture the current bulk response for representative inputs as the
+  oracle, then assert the optimized implementation reproduces it exactly (REQ-022, REQ-023).
+- **Equivalence Partitioning**: batch composition classes — all-valid, all-duplicate, all-invalid,
+  mixed, intra-batch duplicate codes/aliases; batch-size classes {1, 50 (batch boundary), 100}.
+- **Boundary Value Analysis**: Hibernate `batch_size` boundary (N = batch_size, batch_size±1) to
+  confirm batching engages and flushes correctly; bulk size {1, 100}.
+- **White-box / instrumentation**: Hibernate `Statistics` counters (`getPrepareStatementCount`,
+  entity insert/batch counters) assert the round-trip bound scales sub-linearly vs the ~2·N baseline.
+- **Experience-based**: a batch whose one item violates the unique constraint at flush time — verify
+  the per-item transactional fallback (ADR-021) still yields the correct per-item results.
+
+### 8.3 ISO 25010 (Phase 3 deltas)
+
+| Characteristic | Priority | Validation approach |
+|----------------|----------|---------------------|
+| Performance efficiency | **Critical** | TEST-019 asserts bounded statement count for N items via Hibernate `Statistics`; batching engages (SEQUENCE id + `batch_size`/`order_inserts`) |
+| Functional suitability | **Critical** | TEST-020 asserts bulk response byte-for-byte identical to baseline across input classes (REQ-022, REQ-023) |
+| Reliability | **High** | per-item transactional fallback preserves best-effort partial success under batched-insert failure (ADR-021) |
+| Compatibility | **High** | id IDENTITY→SEQUENCE change does not alter any existing behaviour — full existing suite must stay green (RISK-023) |
+| Security | **Medium** | no new attack surface; existing bulk cap + N-token limit unaffected |
+| Maintainability | **Medium** | two-pass structure keeps validation/persistence separable; ≥80% coverage on changed code |
+
+### 8.4 Environment & data (Phase 3)
+
+- Backend: JUnit 5 + Spring Boot Test + H2; enable and read Hibernate `Statistics` (via
+  `SessionFactory`/`hibernate.generate_statistics`) inside the test to count statements/batches.
+- Test data: bulk arrays sized {1, 50, 100}; mixed valid/duplicate/invalid; a pre-seeded code to force
+  an existence hit; an input crafted to trigger a flush-time unique-constraint violation for the
+  fallback path. No PII.
+- Tooling: existing Surefire/Mockito/Spring Test — **no new third-party libraries** (Hibernate
+  `Statistics` ships with Spring Data JPA). Flag before adding anything.
+- Note: assertions should target the round-trip **bound/shape** (constant existence query + batched
+  inserts), not brittle absolute SQL text, to stay resilient to dialect differences.
+
+### 8.5 Traceability (Phase 3)
+
+| Test item | REQ | US | ADR | UNIT | TEST |
+|-----------|-----|----|-----|------|------|
+| Bounded DB round trips for N-item batch (statistics) | 021,024 | 020 | 017,018,019 | UNIT-001 | TEST-019 |
+| Response contract + partial success preserved (mixed batch) | 022,023 | 021 | 017,020,021 | UNIT-001 | TEST-020 |
+
+### 8.6 Open questions (Phase 3)
+
+N/A — derived from approved Phase 3 requirements/architecture (defaults P1–P6; application.yml +
+id-generation changes human-approved via REQ-025).

@@ -1,12 +1,60 @@
 <!-- template_id: test-plan-template.md -->
 <!-- v2 §4 mandatory template. Enforced by testing-standard (§6). -->
 
+# Test Plan — run-20260802T170000Z (TinyURL Phase 3 — bulk DB-query optimization)
+
+- **template_id**: test-plan-template.md
+- **run_id**: run-20260802T170000Z
+- **node_id**: testing
+- **status**: passed
+- **supersedes**: run-20260802T150051Z (Phase 2 — expiry + bulk creation), retained below as the regression baseline
+
+## 0. Phase 3 test scope (required)
+
+**Covered (Phase 3 — this run)**
+
+- Backend (UNIT-001): `POST /api/links/bulk` internals re-implemented as a two-pass batched algorithm
+  (in-memory validation + code assignment → single `findExistingCodes` SELECT → single batched
+  `saveAll`), with a per-item transactional fallback on `DataIntegrityViolationException`. Verifies the
+  bounded DB round-trip target and byte-for-byte preservation of the existing per-item contract and
+  best-effort partial-success semantics.
+
+**Regression (must stay green)**
+
+- All Phase 1 + Phase 2 backend suites, including the existing bulk unit tests TEST-013..016 (updated
+  only to the batched repository interaction — `findExistingCodes` + `saveAll` — with response
+  assertions unchanged) and `LinkFlowIT`.
+
+**Excluded (Phase 3)**
+
+- Frontend (UNIT-002) — unchanged this phase (API-internal optimization only).
+- Prod schema migration for `short_link_seq` (RISK-023) — tracked at release-readiness, not a test case.
+
+## 0a. Phase 3 test cases (required)
+
+| TEST id | Type | Scenario | Traces to | Expected result |
+|---------|------|----------|-----------|-----------------|
+| TEST-019 | integration | 50-item generated-code bulk issues a bounded number of DB statements | REQ-021 · REQ-024 · ADR-018..020 · UNIT-001 | Hibernate `prepareStatementCount` ≤ 10 (baseline ~100 ≈ 2·N); batching engaged |
+| TEST-020 | integration | Mixed batch (valid / INVALID_URL / created alias / intra-batch dup ALIAS_TAKEN / persisted dup ALIAS_TAKEN) | REQ-022 · REQ-023 · ADR-021 · UNIT-001 | Identical ordered per-item results vs. pre-optimization contract |
+| TEST-013..016 | unit | Existing bulk-service cases re-pointed at `findExistingCodes` + `saveAll` | REQ-022 · UNIT-001 | Unchanged response assertions stay green (contract preserved) |
+
+## 0b. Phase 3 execution evidence (required)
+
+- `cd tiny-url-creator/backend && ./mvnw -o verify` → **BUILD SUCCESS**: 31 unit/slice tests
+  (Surefire) + 5 IT (Failsafe: 3 `LinkFlowIT` + 2 `BulkPersistenceIT`), 0 failures / 0 errors.
+- TEST-019 measured ≤ 10 prepared statements for a 50-item batch via
+  `SessionFactory.getStatistics().getPrepareStatementCount()` (H2 test profile, SEQUENCE ids +
+  `jdbc.batch_size: 50` + `order_inserts`).
+- TEST-020 confirms the ordered per-item result vector is unchanged across every input class.
+
+---
+
 # Test Plan — run-20260802T150051Z (TinyURL Phase 2 — expiry + bulk creation)
 
 - **template_id**: test-plan-template.md
 - **run_id**: run-20260802T150051Z
 - **node_id**: testing
-- **status**: passed
+- **status**: passed (Phase 2 baseline)
 - **supersedes**: run-20260801T232309Z (Phase 1 MVP) test plan, retained below as the regression baseline
 
 ## 1. Test scope (required)

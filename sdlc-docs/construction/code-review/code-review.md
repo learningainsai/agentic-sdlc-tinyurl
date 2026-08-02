@@ -1,17 +1,28 @@
 <!-- template_id: code-review-template.md -->
 <!-- v2 §4 mandatory template. Enforced by code-review-standard (§6). -->
 
-# Code Review — run-20260802T150051Z (UNIT-001 backend + UNIT-002 frontend — Phase 2)
+# Code Review — run-20260802T170000Z (UNIT-001 backend — Phase 3 bulk DB-query optimization)
 
 - **template_id**: code-review-template.md
-- **run_id**: run-20260802T150051Z
+- **run_id**: run-20260802T170000Z
 - **reviewer**: construction
 - **status**: passed
-- **supersedes**: run-20260801T232309Z (Phase 1 MVP) code review
+- **supersedes**: run-20260802T150051Z (Phase 2) code review
 
 ## 1. Findings (required)
 
-### Phase 2 findings (this run)
+### Phase 3 findings (this run)
+
+| CR id | Category | Severity | Finding | Resolution |
+|-------|----------|----------|---------|------------|
+| CR-016 | performance | — | UNIT-001: `createBulk` re-implemented as a two-pass batched algorithm — Pass 1 validates URL/expiry and assigns codes in memory (custom aliases + generated codes deduped within the batch via a `HashSet`); Pass 2 resolves all persisted collisions with a **single** `findExistingCodes` `SELECT ... WHERE code IN (:codes)` (ADR-019) and inserts survivors with **one** `saveAll` batched insert. A 50-item batch drops from ~2·N (~100) to ≤10 DB statements (TEST-019). | resolved |
+| CR-017 | correctness | — | UNIT-001: best-effort partial success preserved — in-memory validation failures map to ordered per-item error codes before persistence; on `DataIntegrityViolationException` from the batched `saveAll`, each survivor is retried via the per-item `createOne`/`createOneCatching` path so a single race cannot poison siblings (ADR-021). Response contract is byte-for-byte unchanged (TEST-020). | resolved |
+| CR-018 | correctness / schema | — | UNIT-001: `ShortLink` id switched `IDENTITY → SEQUENCE` (pooled, `allocationSize=50` matching `jdbc.batch_size=50`) because IDENTITY disables Hibernate JDBC insert batching (ADR-018). One sequence fetch per batch. `application.yml` adds `jdbc.batch_size: 50` + `order_inserts`/`order_updates`. | resolved |
+| CR-019 | maintainability | — | UNIT-001: single-create path (`createOne`, `saveWithAlias`, `saveWithGeneratedCode`) left intact and reused as the batch fallback — no duplication of the collision/retry logic. `createBulk` intentionally not `@Transactional` (relies on `saveAll`'s own transaction, consistent with ADR-013/021). | resolved |
+| CR-020 | test-quality | — | Existing bulk unit tests TEST-013..016 re-pointed at the batched interaction (`findExistingCodes` + `saveAll`) with **unchanged response assertions** (proves contract preservation); no failing test was disabled or commented out. New integration tests TEST-019 (statement count) and TEST-020 (contract/partial-success) added. | resolved |
+| CR-021 | operability | low | RISK-023: `prod` runs `ddl-auto: validate` with no in-repo migration tooling; the `short_link_seq` sequence must pre-exist in the prod schema (dev `update` / test `create-drop` create it automatically). Non-blocking for this run — raised to release-readiness. | open (flagged) |
+
+### Phase 2 findings (baseline)
 
 | CR id | Category | Severity | Finding | Resolution |
 |-------|----------|----------|---------|------------|

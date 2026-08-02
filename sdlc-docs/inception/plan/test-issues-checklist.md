@@ -80,3 +80,39 @@
 | Bulk tests | 015,016,017,018 | 015–017 | UNIT-001 | TEST-013,014,015 |
 | Bulk rate-limit | 019 | 018 | UNIT-001 | TEST-016 |
 | UI expiry | 020 | 019 | UNIT-002 | TEST-017,018 |
+
+## Phase 3 test issues — Bulk-creation DB-query optimization (run-20260802T170000Z)
+
+### Test level issues
+- [ ] Statement-count regression — bulk of N items issues a bounded number of DB round trips (one
+      consolidated existence `SELECT` + batched `INSERT`s), asserted via Hibernate `Statistics`
+      (`getPrepareStatementCount` / insert+batch counters); scales sub-linearly vs the ~2·N baseline
+- [ ] Contract preservation — bulk response for the same input (all-valid, mixed valid/duplicate/invalid,
+      intra-batch collision, bounds) is byte-for-byte identical to the pre-optimization implementation
+- [ ] Partial-success preservation — a flush-time unique-constraint violation still yields correct
+      per-item results via the transactional per-item fallback (ADR-021)
+- [ ] Batching-engaged check — with SEQUENCE id + `batch_size`/`order_inserts`, inserts are actually
+      batched (not one-by-one) around the `batch_size` boundary
+- [ ] Regression — full existing backend suite (Phase 1 + Phase 2) stays green after the id-generation
+      switch (RISK-023)
+
+### Coverage targets & metrics (Phase 3)
+- [ ] 100% of REQ-021..025 acceptance criteria automated
+- [ ] ≥80% line / ≥90% branch on the changed `createBulk` + repository paths
+- [ ] 100% of RISK-021 (batched-insert failure → fallback) and RISK-023 (id-generation) scenarios covered
+- [ ] No regression in redirect/single-create hot paths (unchanged)
+
+### Task breakdown & estimation (Phase 3)
+| Test task | Type | Est | Depends on |
+|-----------|------|-----|-----------|
+| Statement-count regression (Hibernate Statistics) | integration/perf | 3 | EN-9, EN-10, EN-11 |
+| Contract + partial-success preservation tests | integration | 2 | EN-11 |
+| Batching-engaged boundary test | integration | 1 | EN-10 |
+| Full existing-suite regression re-run | regression | 1 | EN-10, EN-11 |
+- [ ] Critical path: EN-9 + EN-10 → EN-11 → statement-count + contract tests
+
+### Phase 3 traceability
+| Test issue | REQ | US | UNIT | TEST |
+|------------|-----|----|------|------|
+| Statement-count regression | 021,024 | 020 | UNIT-001 | TEST-019 |
+| Contract + partial-success preservation | 022,023 | 021 | UNIT-001 | TEST-020 |

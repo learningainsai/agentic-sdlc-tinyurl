@@ -100,6 +100,18 @@ Per-item error `code` values: `INVALID_URL`, `INVALID_ALIAS`, `ALIAS_TAKEN`, `IN
 Rate limiting uses a shared N-token bucket: a bulk request consumes one token per item and is rejected
 wholesale (429) if the per-IP budget cannot cover the entire batch.
 
+> **Phase 3 — batched writes (ADR-017..021).** Bulk creation persists in two passes: it validates and
+> assigns all codes in memory, resolves collisions with persisted rows in a **single**
+> `SELECT ... WHERE code IN (...)`, then inserts survivors with **one** batched `saveAll` (a per-item
+> fallback on a rare race preserves best-effort partial success). `ShortLink` ids come from the
+> `short_link_seq` sequence and Hibernate JDBC batching is enabled (`jdbc.batch_size: 50`), so a
+> 100-item batch issues a bounded number of statements instead of ~2 per item. The request/response
+> contract is unchanged.
+>
+> **Operator note:** the `prod` profile runs `ddl-auto: validate` with no bundled migration tooling, so
+> the `short_link_seq` sequence must exist in the schema before deploy (dev `update` and test
+> `create-drop` create it automatically).
+
 ### Redirect
 
 `GET /{code}` → `302 Found` with a `Location` header pointing at the original URL, or `404 Not Found`

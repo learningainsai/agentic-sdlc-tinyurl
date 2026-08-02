@@ -87,3 +87,41 @@ reservation, bulk endpoint (partial success, bounds, N-token rate limiting), and
 | Performance validation | 013 | 013 | UNIT-001 | TEST-011 |
 | Reliability (partial success) | 016 | 016 | UNIT-001 | TEST-014 |
 | Usability (expiry picker) | 020 | 019 | UNIT-002 | TEST-017,018 |
+
+## 7. Phase 3 QA — Bulk-creation DB-query optimization (run-20260802T170000Z)
+
+### 7.1 Scope
+Validate REQ-021..REQ-025 across UNIT-001 (backend) before release: that the bulk endpoint issues a
+**bounded** number of DB round trips for an N-item batch, and that its **behaviour and response
+contract are unchanged** (partial success preserved). This is a performance/characterization change —
+no new API surface, no frontend work.
+
+### 7.2 ISO 25010 (Phase 3)
+| Characteristic | Validation approach |
+|----------------|---------------------|
+| Performance efficiency | TEST-019 asserts bounded statement count via Hibernate `Statistics`; batching engages (SEQUENCE id + `batch_size`/`order_inserts`) |
+| Functional suitability | TEST-020 asserts bulk response byte-for-byte identical to baseline across input classes (REQ-022, REQ-023) |
+| Reliability | per-item transactional fallback preserves best-effort partial success under batched-insert failure (ADR-021) |
+| Compatibility | id IDENTITY→SEQUENCE change alters no existing behaviour — full existing suite stays green (RISK-023) |
+| Security | no new attack surface; existing bulk cap + N-token limit unaffected; no medium+ unresolved SEC findings |
+| Maintainability | two-pass structure keeps validation/persistence separable; ≥80% coverage on changed code |
+
+### 7.3 Quality gates (Phase 3)
+- **Entry (testing)**: implementation complete for UNIT-001; Phase 3 tests present (statement-count +
+  contract preservation); durable high-impact approval for the id-generation + `application.yml`
+  change recorded; code review approved; build green; full existing suite green.
+- **Exit**: 100% of REQ-021..025 acceptance criteria pass; measured bulk round-trip count bounded and
+  sub-linear vs baseline (REQ-024); bulk response identical to baseline for all input classes
+  (REQ-022, REQ-023); no critical/high defects; coverage thresholds met; zero critical security
+  findings; full existing suite green.
+- **Escalation**: any unmet criterion (including a behavioural diff in the bulk response, or a
+  regression from the id-generation change) blocks the gate and returns UNIT-001 to construction with a
+  logged defect; orchestrator raises a human decision point.
+
+### 7.4 Traceability (Phase 3)
+| QA item | REQ | US | UNIT | TEST |
+|---------|-----|----|------|------|
+| Performance (bounded round trips) | 021,024 | 020 | UNIT-001 | TEST-019 |
+| Functional acceptance (contract unchanged) | 022 | 021 | UNIT-001 | TEST-020 |
+| Reliability (partial success preserved) | 023 | 021 | UNIT-001 | TEST-020 |
+| Change-control (config + id-generation approved) | 025 | 020 | UNIT-001 | — |

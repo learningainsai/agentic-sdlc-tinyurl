@@ -19,10 +19,12 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -195,8 +197,8 @@ class LinkServiceTest {
     @Test
     void bulkCreatesAllValidItems() {
         when(codeGenerator.generate()).thenReturn("Gen0001", "Gen0002");
-        when(repository.existsByCode(anyString())).thenReturn(false);
-        when(repository.save(any(ShortLink.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(repository.findExistingCodes(any())).thenReturn(Set.of());
+        when(repository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
 
         BulkCreateResponse response = service().createBulk(new BulkCreateRequest(List.of(
                 new CreateLinkRequest("https://a.com", null),
@@ -214,8 +216,8 @@ class LinkServiceTest {
     @Test
     void bulkReportsPerItemErrorAndKeepsValidOnes() {
         when(codeGenerator.generate()).thenReturn("Gen0001");
-        when(repository.existsByCode(anyString())).thenReturn(false);
-        when(repository.save(any(ShortLink.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(repository.findExistingCodes(any())).thenReturn(Set.of());
+        when(repository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
 
         BulkCreateResponse response = service().createBulk(new BulkCreateRequest(List.of(
                 new CreateLinkRequest("https://a.com", null),
@@ -230,8 +232,8 @@ class LinkServiceTest {
     // TEST-015: intra-batch duplicate alias -> first wins, loser gets ALIAS_TAKEN.
     @Test
     void bulkReportsDuplicateAliasWithinBatch() {
-        when(repository.existsByCode("dup")).thenReturn(false, true);
-        when(repository.save(any(ShortLink.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(repository.findExistingCodes(any())).thenReturn(Set.of());
+        when(repository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
 
         BulkCreateResponse response = service().createBulk(new BulkCreateRequest(List.of(
                 new CreateLinkRequest("https://a.com", "dup"),
@@ -245,8 +247,8 @@ class LinkServiceTest {
     @Test
     void bulkReportsInvalidExpiryPerItem() {
         when(codeGenerator.generate()).thenReturn("Gen0001");
-        when(repository.existsByCode(anyString())).thenReturn(false);
-        when(repository.save(any(ShortLink.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(repository.findExistingCodes(any())).thenReturn(Set.of());
+        when(repository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
 
         CreateLinkRequest expired = new CreateLinkRequest("https://b.com", null);
         expired.setExpiresAt(NOW.minusSeconds(1));

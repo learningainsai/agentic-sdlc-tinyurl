@@ -5,6 +5,92 @@
 
 ---
 
+## Run run-20260802T170000Z — Phase 3 (Performance improvement)
+
+- **run_id**: run-20260802T170000Z
+- **node_id**: requirements
+- **skill**: idea-refiner
+- **authored_by**: inception
+- **review_mode**: pre-implementation critique (no code)
+- **intake**: INTAKE-20260802T170000Z-performance-improvement
+- **source**: User request (verbatim) — "I want to improve performance"
+
+This report interrogates the request **before** any requirements are drafted or code is written.
+The request as stated is a classic **untestable requirement**: it names no component, no metric, no
+baseline, and no acceptance threshold. A verdict and numbered open questions appear at the end;
+**these must be agreed with the human before `requirements.md` is drafted.**
+
+### Ambiguities
+
+1. **"performance"** — Undefined dimension. Could mean redirect latency, create latency, bulk
+   throughput, cold-start time, frontend load/render time, DB query time, memory footprint, or
+   build/CI time. Each implies a different change and a different measurement method.
+2. **"improve"** — No baseline and no target. "Improve" is unverifiable without a current measured
+   number and a goal (e.g., "redirect p95 from X ms to ≤ Y ms"). The Phase 1 design already asserts
+   NFR targets (redirect p95 ≤ 100 ms, create p95 ≤ 300 ms) — is the complaint that these are being
+   missed, or a request to tighten them?
+3. **Trigger** — Is this reactive (an observed slowness / incident / profiling result) or proactive
+   (pre-emptive hardening)? If reactive, what evidence exists (numbers, logs, load conditions)?
+
+### Missing Edge Cases
+
+1. **Load profile** — Target throughput (req/s), concurrency, and payload sizes are unstated. Bulk
+   creation (max 100 items, Phase 2) and the in-memory per-IP rate limiter behave very differently
+   under load; "performance" under 1 user vs. 1000 concurrent users is a different problem.
+2. **Measurement environment** — Local H2 vs. PostgreSQL, single instance vs. replicas. The current
+   rate limiter is in-memory/per-instance (RISK-004); any throughput work interacts with that.
+3. **Regression guardrails** — Is a performance/load test harness expected as an acceptance artifact,
+   or is this "best-effort tuning" with no measured gate?
+
+### Unstated Assumptions
+
+1. That there **is** a measurable problem — no profiling or benchmark data has been provided.
+2. That the change is allowed to touch product source. Note: `AGENTS.md` forbids changing dependency
+   versions, `application.yml`, or adding libraries without explicit approval — so caching layers
+   (e.g., Redis/Caffeine), connection-pool tuning, or an APM agent would each need a separate green-light.
+3. That scope is code-level, not infrastructure (JVM flags, container sizing, DB indexing/hardware).
+
+### Scope Risks
+
+1. **Unbounded scope** — Without a named target, this could sprawl across backend, frontend, DB, and
+   CI. It must be narrowed to one measurable objective per run.
+2. **Premature optimization** — Optimizing without a baseline risks complexity for no verifiable gain
+   and could regress the clean layered architecture the standards require.
+3. **New-dependency temptation** — Common perf fixes (caching libs, async frameworks) collide with the
+   "no new library without flagging" rule; each needs an explicit high-impact decision.
+
+### Open Questions
+
+1. Which **component/flow** should get faster: redirect `GET /{code}`, create `POST /api/links`, bulk
+   `POST /api/links/bulk`, the Angular frontend load, DB queries, or build/CI time?
+2. What is the **current measured baseline** (a number, and how it was measured), and what is the
+   **target** (e.g., redirect p95 ≤ 50 ms)?
+3. Is this **reactive** (you observed slowness — please share the evidence) or **proactive** hardening?
+4. What **load profile** must it hold under (concurrent users / requests-per-second / payload size)?
+5. Which **environment** is authoritative for the measurement — local H2, or PostgreSQL on a
+   representative instance/replica count?
+6. Are you open to changes that need approval per `AGENTS.md` — e.g., **adding a cache library**,
+   tuning the **connection pool / `application.yml`**, or adding an **index**/schema change — or must
+   the fix stay within existing code and dependencies?
+7. Is a **performance/load-test harness** expected as an acceptance artifact (a measured gate), or is
+   best-effort tuning acceptable without an automated regression test?
+
+### Recommendations
+
+- Narrow to **one measurable objective** (component + baseline + target + load profile) before drafting
+  requirements. Everything else stays out of scope for this run.
+- Establish the **baseline first** (measure), so "improve" becomes a verifiable delta.
+- Pre-agree the **guardrails**: whether new dependencies / config / schema changes are permitted, since
+  the most effective perf levers here (caching, indexing, pool tuning) all trip `AGENTS.md` approval rules.
+
+### Verdict
+
+**7 open questions before implementation should start.** The request is currently untestable and
+unscoped; `requirements.md` for run-20260802T170000Z must not be drafted until Q1–Q7 are answered and
+a single measurable objective is agreed with the human.
+
+---
+
 ## Run run-20260802T150051Z — Phase 2 (Expiry column + Bulk creation)
 
 - **run_id**: run-20260802T150051Z

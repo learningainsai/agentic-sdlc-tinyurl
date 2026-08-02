@@ -1,0 +1,28 @@
+run_id: run-20260802T170000Z
+node_id: documentation
+phase: construction
+from_agent: construction
+to_agents: [construction]
+status: passed
+input_artifacts:
+  - sdlc-docs/handoffs/run-20260802T170000Z/implementation.yaml
+output_artifacts:
+  - sdlc-docs/construction/documentation/documentation-plan.md
+  - tiny-url-creator/backend/README.md
+template_ids: [documentation-plan-template.md]
+standards_applied: [documentation-standard]
+traceability_ids: [UNIT-001, DOC-005, REQ-021, REQ-022, REQ-023, REQ-024, REQ-025, ADR-017, ADR-018, ADR-019, ADR-020, ADR-021]
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/documentation/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/documentation/exit-evidence.md
+risks:
+  - "RISK-023 (operability): documented as an operator caveat in the backend README (short_link_seq under prod ddl-auto:validate)."
+validation_evidence:
+  - "DOC-005 documents the batched write, short_link_seq sequence, jdbc.batch_size, and the prod ddl-auto:validate operator caveat (RISK-023)."
+  - "Public API request/response contract unchanged — no client-facing API doc change beyond the operator note."
+open_questions: []
+next_ready_nodes: [release-readiness]
+context_summary: >
+  Backend README gains a Phase 3 note describing the two-pass batched bulk write, the SEQUENCE id and
+  JDBC batching, and the operator caveat that short_link_seq must pre-exist under prod ddl-auto:validate.
+  Documentation plan updated (DOC-005). Contract unchanged.

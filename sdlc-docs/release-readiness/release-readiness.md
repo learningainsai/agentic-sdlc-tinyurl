@@ -1,12 +1,40 @@
 <!-- template_id: release-readiness-template.md -->
 <!-- v2 §4 mandatory template. Final lifecycle check; defers deploy to human decision (S7). -->
 
+# Release Readiness — TinyURL Phase 3 (bulk DB-query optimization)
+
+- **template_id**: release-readiness-template.md
+- **run_id**: run-20260802T170000Z
+- **node_id**: release-readiness
+- **status**: passed (GO — human go/no-go)
+- **supersedes**: run-20260802T150051Z (Phase 2) release readiness
+
+## 0. Phase 3 readiness items (required)
+
+| REL id | Item | Status | Evidence |
+|--------|------|--------|----------|
+| REL-020 | Backend build & tests green (Phase 3) | ready | `./mvnw -o verify` — 31 unit/slice + 5 IT (3 `LinkFlowIT` + 2 `BulkPersistenceIT`), BUILD SUCCESS |
+| REL-021 | Bulk DB round-trip target met | ready | TEST-019: ≤10 prepared statements for a 50-item batch (baseline ~100) |
+| REL-022 | Bulk contract & partial success preserved | ready | TEST-020 + TEST-013..016 (unchanged response assertions) |
+| REL-023 | Phase 1 + Phase 2 regression green | ready | Full suite re-run in the same build; no regressions |
+| REL-024 | Code review passed, no blocking findings | ready | code-review.md (CR-016..021); verdict passed |
+| REL-025 | Security review, no unresolved high/critical | ready | security-review.md (SEC-015..018 resolved); no new attack surface |
+| REL-026 | Documentation published (DOC-005) | ready | backend/README.md Phase 3 note; documentation-plan.md |
+| REL-027 | **Prod schema precondition — `short_link_seq`** | **condition** | RISK-023: `prod` `ddl-auto: validate` requires the `short_link_seq` sequence to exist before deploy. **GO is granted contingent on DBA provisioning it.** Dev `update` / test `create-drop` create it automatically. |
+| REL-028 | Deployment/operations | deferred | Human decision (S7); no automated deploy configured |
+
+**Go/No-Go decision:** **GO** (human approval "Go", 2026-08-02) — releasable, contingent on REL-027
+(`short_link_seq` provisioned in the prod schema prior to deploy). Durable approval:
+`sdlc-docs/approvals/run-20260802T170000Z/release-readiness/release-readiness-go.yaml`.
+
+---
+
 # Release Readiness — TinyURL Phase 2 (expiry + bulk creation)
 
 - **template_id**: release-readiness-template.md
 - **run_id**: run-20260802T150051Z
 - **node_id**: release-readiness
-- **status**: passed
+- **status**: passed (Phase 2 baseline)
 - **supersedes**: run-20260801T232309Z (Phase 1 MVP) release readiness
 
 ## 1. Readiness items (required)

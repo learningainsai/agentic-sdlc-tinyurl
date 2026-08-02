@@ -3,12 +3,13 @@
 # Architecture & Design — TinyURL URL Shortener
 
 - **template_id**: architecture-design-template.md
-- **run_id**: run-20260801T232309Z (Phase 1, approved) · run-20260802T150051Z (Phase 2, in review)
+- **run_id**: run-20260801T232309Z (Phase 1, approved) · run-20260802T150051Z (Phase 2, approved) · run-20260802T170000Z (Phase 3, in review)
 - **node_id**: architecture-design
-- **status**: Phase 1 approved · Phase 2 (§9) pending high-impact durable confirmation
+- **status**: Phase 1 approved · Phase 2 approved · Phase 3 (§10) pending high-impact durable confirmation
 
-> Cumulative design. **Phase 1** (§1–§8, ADR-001..ADR-009) is approved and implemented.
-> **Phase 2** (§9, ADR-010..ADR-016) adds the optional expiry column and bulk creation.
+> Cumulative design. **Phase 1** (§1–§8, ADR-001..ADR-009) and **Phase 2** (§9, ADR-010..ADR-016)
+> are approved and implemented. **Phase 3** (§10, ADR-017..ADR-021) optimizes the bulk-creation
+> database write pattern behind the unchanged public contract.
 
 ## 1. Overview (required)
 
@@ -226,3 +227,93 @@ the redirect hot path stays a single indexed read (REQ-013 performance preserved
 - **Security**: OWASP A05/API-abuse addressed via cap + N-token limiting + per-item validation.
 - **Availability/Observability**: unchanged; add structured logs for bulk outcomes (counts of
   created/failed) and expiry-triggered 404s, with no PII.
+
+---
+
+## 10. Phase 3 — Bulk-creation DB-query optimization (run-20260802T170000Z)
+
+Additive design for intake INTAKE-20260802T170000Z. Traces to REQ-021..REQ-025 (defaults P1–P6).
+**No change** to the public API contract (§9.2), the data model (§9.3), rate limiting (ADR-014), or the
+frontend. This section only re-shapes the persistence access pattern inside `LinkService.createBulk`.
+
+### 10.1 Problem (baseline)
+
+Today `LinkService.createBulk` calls `createOne(item)` in a loop; each `createOne` runs an individual
+`existsByCode` **SELECT** and an individual, non-batched `save` **INSERT**. For N new items that is
+~**2N** discrete DB statements with no JDBC batching — the target of this optimization (REQ-021).
+
+### 10.2 Architecture decisions (Phase 3)
+
+| ID | Decision | Rationale | Alternatives considered | Traces to |
+|----|----------|-----------|-------------------------|-----------|
+| ADR-017 | **Two-pass bulk algorithm** in `LinkService.createBulk`. **Pass 1 (prepare, no writes):** for each item in order, validate URL/alias/expiry (same rules as `createOne`), assign its target code (explicit alias, or a CSPRNG-generated code), and resolve uniqueness in memory against (a) a **single consolidated existence lookup** of all candidate codes (ADR-019) and (b) an in-batch seen-set (first-wins). Items that fail validation or lose an alias/collision race are recorded as `BulkItemResult.error(...)` with **exactly the same error codes as today** and excluded from the write set. **Pass 2 (persist):** insert the prepared, known-unique `ShortLink` entities via `repository.saveAll(...)` under a single transaction so Hibernate JDBC batching applies. Results are re-assembled in original request order. | Preserves the exact external contract (REQ-022) and best-effort partial success (REQ-023) while collapsing ~2N statements into one existence query + batched inserts (REQ-021). Validation/alias errors are decided before any write, so the batch contains only known-valid rows. | Keep per-item loop (no gain); all-or-nothing transaction (violates REQ-023); DB upsert/`ON CONFLICT` (DB-specific, changes semantics) | REQ-021, REQ-022, REQ-023 |
+| ADR-018 | **Enable Hibernate JDBC batching** in `application.yml` (**human-approved**, REQ-025): `spring.jpa.properties.hibernate.jdbc.batch_size: 50`, `order_inserts: true`, `order_updates: true`, `batch_versioned_data: true`. `IDENTITY` id generation disables JDBC batching in Hibernate, so `ShortLink.id` generation is switched to a **`SEQUENCE`** strategy (`GenerationType.SEQUENCE`, pooled) to let inserts batch. | JDBC batching is the dominant win on large batches; it is inert without a batch size. Sequence + pooled allocation is the standard way to make batched inserts effective on PostgreSQL. | Leave `batch_size` unset (no batching); keep `IDENTITY` (silently prevents batching); `TABLE` generator (slower) | REQ-021, REQ-025 |
+| ADR-019 | Add a **consolidated existence query** to `LinkRepository`: `List<String> findExistingCodes(Collection<String> codes)` (`SELECT code FROM short_link WHERE code IN (:codes)`), replacing the per-item `existsByCode` calls in the bulk path. Single round trip per batch. | Removes N SELECTs (REQ-021); parameterized `IN` list (no SQL injection, OWASP A05). Bounded by the 100-item cap so the `IN` list is small. | Per-item `existsByCode` (N round trips); load full entities (wasteful) | REQ-021 |
+| ADR-020 | **In-memory generated-code assignment** for no-alias items: generate candidate codes for all such items up front, reject any that collide with the consolidated existing-code set or the in-batch seen-set, and regenerate collisions in memory (bounded attempts) — **before** Pass 2. No per-item existence round trip. | Keeps generated-code uniqueness (ADR-004) without N extra SELECTs; collision probability is negligible at 7-char Base62 over ≤100 items. | Per-item `existsByCode` retry loop (defeats the optimization) | REQ-021, REQ-008 |
+| ADR-021 | **Concurrency fallback preserves partial success:** wrap Pass 2 in a transaction; if a rare `DataIntegrityViolationException` still occurs (a concurrent request inserted the same code between Pass 1 and Pass 2), **roll back the batch and retry each affected item in its own transaction** via the existing `createOne` path, so every still-valid item is persisted and only the true loser gets an `ALIAS_TAKEN`/collision error. This bounds the correctness risk of moving uniqueness checks off the DB round trip. | Guarantees REQ-023 (best-effort partial success) even under the Pass1→Pass2 TOCTOU race; the fast batched path is the norm, the per-item fallback is the rare exception. | Trust the pre-check only (loses an item on a race); global retry of the whole batch (amplifies work) | REQ-023, REQ-008 |
+
+### 10.3 Measurement & acceptance (REQ-024)
+
+A repository/service integration test enables Hibernate `Statistics` and asserts that creating a
+representative batch (e.g., 50 no-alias items) issues **a bounded, batch-shaped statement count** —
+one consolidated existence query plus `⌈N / batch_size⌉` insert batches — rather than the ~2N
+individual statements of the baseline, and **fails if the per-item pattern regresses**. The assertion
+is on `getPrepareStatementCount()` / batch counts, which is portable across H2 and PostgreSQL even
+though PostgreSQL is the authoritative performance target.
+
+### 10.4 Data model change
+
+**No column/table change.** The only persistence-mapping change is `ShortLink` id generation:
+`GenerationType.IDENTITY` → `GenerationType.SEQUENCE` (pooled) to permit JDBC insert batching (ADR-018).
+A sequence (`short_link_seq`) is added; existing rows and the unique `code` index are unaffected. This
+is backward compatible for reads and for the redirect/single-create paths.
+
+### 10.5 Security & privacy (Phase 3)
+
+- **SEC-INPUT-01**: the consolidated existence query and the batch insert use **parameterized** JPA
+  binding (`IN (:codes)` + entity persistence) — no SQL string concatenation (OWASP A05).
+- **Surface unchanged**: no new endpoint, input, or data exposure; the 100-item cap (REQ-017) and
+  N-token rate limit (ADR-014) still bound batch size, so the `IN` list and batch stay small.
+- **SEC-AUDIT-01**: bulk outcome logging (created/failed counts) unchanged; no PII/secrets.
+
+### 10.6 High-impact classification (Phase 3)
+
+- **Classification**: **critical_design**
+- **Rationale**: Although additive, this changes the persistence transaction model of a core write
+  path (batched insert under a transaction with a per-item fallback), a **global** Hibernate setting
+  (`batch_size`, applies to all writes), and the entity **id-generation strategy**
+  (IDENTITY → SEQUENCE). These are hard-to-reverse decisions with correctness (REQ-023 partial
+  success under a TOCTOU race) and cross-cutting performance implications → durable human
+  confirmation required (spec S3, v2 §8).
+- **Approval record**: sdlc-docs/approvals/run-20260802T170000Z/architecture-design/architecture-design-approval.yaml (pending)
+
+### 10.7 Traceability (Phase 3)
+
+- ADR-017 → REQ-021/022/023 · ADR-018 → REQ-021/025 · ADR-019 → REQ-021 ·
+  ADR-020 → REQ-021/008 · ADR-021 → REQ-023/008.
+- Upstream handoff: sdlc-docs/handoffs/run-20260802T170000Z/requirements.yaml.
+- Unit impacted: **UNIT-001** (backend) only — `LinkService`, `LinkRepository`, `ShortLink`,
+  `application.yml`. UNIT-002 (frontend) untouched → likely `single_unit` branch.
+
+### 10.8 Open questions & risks (Phase 3)
+
+- **Open questions**: None — resolved at the requirements gate (defaults P1–P6; JDBC batching
+  authorized; optimize for large batches; PostgreSQL authoritative).
+- **Risks**:
+  - RISK-021 (low, **mitigated**): moving uniqueness checks off the per-item DB round trip creates a
+    Pass1→Pass2 TOCTOU window — mitigated by the transactional per-item fallback on
+    `DataIntegrityViolationException` (ADR-021), which preserves best-effort partial success.
+  - RISK-023 (low, mitigated): `hibernate.jdbc.batch_size` and the id-generation switch are **global**
+    and affect single-create/redirect too — mitigated by keeping existing behavior identical and
+    verifying the full backend test suite (single-create, redirect, expiry) still passes.
+  - RISK-024 (low, accepted): the in-memory rate limiter and per-instance nature (RISK-004/014) are
+    unchanged; this optimization is orthogonal to horizontal scaling.
+
+### 10.9 NFR coverage (Phase 3)
+
+- **Performance**: bulk write cost drops from ~2N statements to one existence query + `⌈N/batch_size⌉`
+  batched inserts; redirect and single-create hot paths are functionally unchanged (verified by the
+  existing suite). 
+- **Security**: parameterized `IN` + batched persistence; unchanged surface (OWASP A05).
+- **Correctness**: externally-observable results identical to Phase 2 (REQ-022/023), proven by
+  contract tests plus the statement-count regression test (REQ-024).

@@ -20,6 +20,15 @@ compensating actions, and an append-only audit trail.
 - **Human decisions** for re-planning, parallel conflicts, and release readiness.
 - **Append-only markdown audit** preserving decision lineage.
 
+## Completed Tasks
+
+| # | Task | Description |
+|---|------|-------------|
+| 1 | Built the agentic SDLC custom orchestrators with custom agents and skills | Designed and implemented the top-level `sdlc-orchestrator` alongside the single-threaded `inception` and multi-agent `construction` sub-agents, backed by the full skill set (orchestration, gate/policy approval, handoff, unit construction, traceability, failure recovery, audit logging) that governs the end-to-end lifecycle. |
+| 2 | Completed TinyURL Phase 1 as a greenfield build | Took the TinyURL service from an initial product idea through idea refinement, approved requirements, architecture and unit decomposition, and Construction — delivering the Spring Boot + PostgreSQL implementation with tests, documentation, code review, and release-readiness gates. |
+| 3 | Completed the brownfield enhancements | Applied the brownfield flow to evolve the existing TinyURL codebase: recovered current state and handoffs, ran impact analysis against requirements/architecture/unit registry, refined the enhancement scope, updated affected requirements and ADRs, and re-planned and implemented only the impacted units with regression and integration checks. |
+| 4 | Completed ambiguous requirements handling as Phase 3 | The initial "improve performance" requirement was flagged as ambiguous and untestable by the `idea-refiner` skill during idea refinement; refinement narrowed its scope to a concrete, testable target — improving bulk URL creation performance — which was then carried through requirements approval, design, and Construction. |
+
 ## TinyURL Project Brief
 
 This repository is prepared to build a URL shortener service from scratch with core APIs,
@@ -132,6 +141,42 @@ sdlc-docs/
   approvals/  handoffs/  policy-evidence/  # durable v2 evidence (v2 §7/§8/§2)
   inception/  construction/  release-readiness/  # generated lifecycle artifacts (v2 §11)
 ```
+
+## Running the TinyURL Project Locally
+
+The TinyURL application itself lives under `tiny-url-creator/` (`backend/` = Spring Boot + Maven,
+`frontend/` = Angular). Prerequisites: **Java 17**, **Maven** (or the bundled `./mvnw`), **Docker**
+(for local PostgreSQL), and **Node.js/npm** (Angular 17 CLI).
+
+1. **Start PostgreSQL for the backend `dev` profile:**
+   ```bash
+   cd tiny-url-creator/backend
+   docker compose up -d
+   ```
+   This starts a `postgres:16-alpine` container (`tinyurl` db/user/password) on port `5432`.
+
+2. **Run the backend API:**
+   ```bash
+   cd tiny-url-creator/backend
+   ./mvnw spring-boot:run
+   ```
+   The API starts on `http://localhost:8080` using the `dev` Spring profile (`application-dev.yml`).
+   Run `./mvnw test` to execute the JUnit test suite (uses an in-memory H2 `test` profile, no Docker needed).
+
+3. **Run the frontend Angular app:**
+   ```bash
+   cd tiny-url-creator/frontend
+   npm install
+   npm start
+   ```
+   This runs `ng serve` on `http://localhost:4200`, proxying `/api` requests to the backend on
+   port `8080` via `proxy.conf.json`. Run `npm test` for the Karma/Jasmine unit tests.
+
+4. **Use the app:** open `http://localhost:4200` in a browser to create and manage short links, or
+   call the API directly, e.g. `POST http://localhost:8080/api/links`.
+
+To stop the local database: `docker compose down` from `tiny-url-creator/backend` (add `-v` to also
+drop the `tinyurl-pgdata` volume).
 
 ## Getting started
 

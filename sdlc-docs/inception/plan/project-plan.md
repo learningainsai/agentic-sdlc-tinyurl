@@ -291,3 +291,103 @@ passed. Labels: `epic`,`priority-high`,`value-high`. Traces: all Phase 2 REQ/ADR
 | EN-8 | 020 | 019 | 016 | UNIT-002 |
 | TEST-010..016 | 011–019 | 011–018 | 010–015 | UNIT-001 |
 | TEST-017..018 | 020 | 019 | 016 | UNIT-002 |
+
+## 11. Phase 3 plan — Bulk-creation DB-query optimization (run-20260802T170000Z)
+
+- **skill**: breakdown-plan · **sources**: requirements.md §9 (REQ-021..025), architecture-design.md
+  §10 (ADR-017..021), unit-registry.yaml (UNIT-001 Phase 3). **Plan ref: PLAN-001 (Phase 3).**
+
+### 11.1 Overview
+
+- **Business value**: make `POST /api/links/bulk` scale — cut the database round trips for an N-item
+  batch from ~2·N statements (one existence `SELECT` + one `INSERT` per item) to a bounded, batched
+  pattern (one consolidated existence `SELECT` + batched `INSERT`s), reducing latency and DB load on
+  large batches **without changing behaviour**.
+- **Success criteria**: (1) statement/round-trip count for an N-item batch is bounded and independent
+  of N except for batched inserts (REQ-024); (2) bulk response body is byte-for-byte identical to the
+  current implementation for the same input, including mixed valid/duplicate/invalid batches
+  (REQ-022, REQ-023); (3) full existing backend suite stays green; (4) zero new high/critical
+  security findings.
+- **Milestones**: M10 repository batch lookup + id-generation switch; M11 two-pass `createBulk` +
+  batching config; M12 regression + preservation tests green; M13 code/security review; M14
+  release-readiness passed.
+
+### 11.2 Work item hierarchy
+
+```mermaid
+graph TD
+    E3[Epic EPIC-3: Bulk creation performance] --> F8[Feature FEAT-8: Batched bulk persistence]
+    F8 --> S20[US-020 Bulk uses bounded DB round trips]
+    F8 --> S21[US-021 Behaviour & contract unchanged]
+    F8 --> EN9[Enabler EN-9: findExistingCodes batch lookup]
+    F8 --> EN10[Enabler EN-10: id IDENTITY→SEQUENCE + JDBC batching config]
+    F8 --> EN11[Enabler EN-11: two-pass createBulk + per-item fallback]
+    S20 --> T19[TEST-019 statement-count regression]
+    S21 --> T20[TEST-020 contract + partial-success preservation]
+```
+
+### 11.3 Issues breakdown
+
+**Epic EPIC-3: Bulk creation performance** — REQ-021..025 satisfied; behaviour unchanged;
+release-readiness passed. Labels: `epic`,`backend`,`performance`,`priority-medium`. Traces: all
+Phase 3 REQ/ADR/UNIT.
+
+| Feature | Unit | Stories | Enablers | Acceptance | Labels | Est |
+|---------|------|---------|----------|------------|--------|-----|
+| FEAT-8 Batched bulk persistence | UNIT-001 | US-020, US-021 | EN-9, EN-10, EN-11 | bounded round trips for N items; identical response for same input; existing suite green | `feature`,`backend`,`performance` | M |
+
+**Stories (INVEST)**
+
+| Story | Statement (abbrev.) | AC source | Labels | Est |
+|-------|---------------------|-----------|--------|-----|
+| US-020 | Bulk create issues bounded DB round trips (one existence SELECT + batched INSERTs) | REQ-021, REQ-024 | `user-story`,`backend`,`performance`,`P1` | 3 |
+| US-021 | Bulk behaviour & API contract unchanged (partial success preserved) | REQ-022, REQ-023 | `user-story`,`backend`,`P1` | 2 |
+
+**Technical enablers**
+
+| Enabler | Description | Enables | Labels | Est |
+|---------|-------------|---------|--------|-----|
+| EN-9 | `LinkRepository.findExistingCodes(Collection<String>)` — single `SELECT ... WHERE code IN (:codes)` (ADR-019) | US-020 | `enabler`,`backend`,`database`,`P1` | 1 |
+| EN-10 | `ShortLink` id IDENTITY→SEQUENCE (pooled) + `application.yml` Hibernate `batch_size:50`, `order_inserts:true` (ADR-018; approved via REQ-025) | US-020 | `enabler`,`backend`,`database`,`P1` | 2 |
+| EN-11 | Two-pass `createBulk`: Pass 1 in-memory validation + code assignment + one consolidated existence check; Pass 2 transactional `saveAll` with per-item fallback on `DataIntegrityViolationException` (ADR-017/020/021) | US-020, US-021 | `enabler`,`backend`,`P1` | 3 |
+
+**Tests**
+
+| Test | Covers | Labels |
+|------|--------|--------|
+| TEST-019 | Statement-count regression via Hibernate `Statistics` — N-item batch bounded (UNIT-001) | `test`,`backend`,`performance` |
+| TEST-020 | Contract + partial-success preservation — mixed valid/duplicate/invalid batch response identical (UNIT-001) | `test`,`backend` |
+
+### 11.4 Estimation & critical path
+
+- **Total Phase 3 points**: ~11 (stories 5 + enablers 6). Epic size **M**.
+- **Critical path**: EN-9 + EN-10 → EN-11 → US-020/US-021 → TEST-019/TEST-020.
+- **Prerequisite**: EN-10 (id-generation + batching config) must land with EN-11 so batching actually
+  engages; EN-9 is independent and can precede EN-11.
+- **Sequential**: single unit (UNIT-001); no parallel unit work this phase.
+
+### 11.5 Risk assessment (Phase 3)
+
+- RISK-021 (medium, mitigated): JDBC batching + best-effort partial success conflict — a failing
+  batched insert rolls back the batch. Mitigated by the transactional per-item fallback (EN-11 / ADR-021).
+- RISK-023 (medium, flagged): `ShortLink` id IDENTITY→SEQUENCE is a global id-generation change
+  (blast radius across all inserts). Mitigated by keeping code-generation behaviour identical and by
+  the full existing suite + TEST-019/020 regression coverage; human-approved via REQ-025 / architecture.
+- RISK-022 (low, accepted): application.yml batching tuning (`batch_size`) is a config value that may
+  need environment-specific tuning later.
+
+### 11.6 Traceability (Phase 3)
+
+| Work item | REQ | US | ADR | UNIT |
+|-----------|-----|----|-----|------|
+| FEAT-8 | 021–025 | 020,021 | 017–021 | UNIT-001 |
+| EN-9 | 021,024 | 020 | 019 | UNIT-001 |
+| EN-10 | 021,025 | 020 | 018 | UNIT-001 |
+| EN-11 | 021,022,023 | 020,021 | 017,020,021 | UNIT-001 |
+| TEST-019 | 021,024 | 020 | 017,018,019 | UNIT-001 |
+| TEST-020 | 022,023 | 021 | 020,021 | UNIT-001 |
+
+### 11.7 Open questions (Phase 3)
+
+N/A — scope fixed by approved Phase 3 requirements (defaults P1–P6) + architecture (ADR-017..021);
+the application.yml + id-generation changes were flagged (REQ-025) and human-approved.

@@ -66,3 +66,33 @@
 | FEAT-7 | 020 | 019 | 016 | UNIT-002 |
 | EN-5..8 | per enabler | — | 010–016 | UNIT-001/002 |
 | TEST-010..018 | 011–020 | 011–019 | 010–016 | UNIT-001/002 |
+
+## Phase 3 issues — Bulk-creation DB-query optimization (run-20260802T170000Z)
+
+### Epic / Feature level
+- [ ] EPIC-3 Bulk creation performance (labels `epic`,`backend`,`performance`,`priority-medium`; AC REQ-021..025)
+- [ ] FEAT-8 Batched bulk persistence → EPIC-3 (UNIT-001; est M; blocked by EN-9 + EN-10, then EN-11)
+
+### Story / Enabler / Test level
+- [ ] US-020 (bounded DB round trips), US-021 (behaviour/contract unchanged) created (INVEST), points
+      assigned, linked to FEAT-8
+- [ ] EN-9 (findExistingCodes batch lookup), EN-10 (id IDENTITY→SEQUENCE + JDBC batching config),
+      EN-11 (two-pass createBulk + per-item fallback) created and prioritized
+- [ ] TEST-019 (statement-count regression), TEST-020 (contract + partial-success preservation) created
+      and linked to US-020/US-021
+- [ ] Dependencies mapped: EN-9 → US-020; EN-10 → US-020 (batching must engage); EN-9+EN-10 → EN-11 →
+      US-020/US-021
+- [ ] High-impact flags noted: EN-10 (id-generation change, RISK-023) and `application.yml` change
+      (REQ-025) — durable approval required before construction merges
+- [ ] Every Phase 3 item traces to REQ-/US-/ADR-/UNIT- (see project-plan.md §11.6)
+
+### Phase 3 traceability
+| Issue | REQ | US | ADR | UNIT |
+|-------|-----|----|-----|------|
+| EPIC-3 | 021–025 | 020,021 | 017–021 | UNIT-001 |
+| FEAT-8 | 021–025 | 020,021 | 017–021 | UNIT-001 |
+| EN-9 | 021,024 | 020 | 019 | UNIT-001 |
+| EN-10 | 021,025 | 020 | 018 | UNIT-001 |
+| EN-11 | 021,022,023 | 020,021 | 017,020,021 | UNIT-001 |
+| TEST-019 | 021,024 | 020 | 017,018,019 | UNIT-001 |
+| TEST-020 | 022,023 | 021 | 020,021 | UNIT-001 |

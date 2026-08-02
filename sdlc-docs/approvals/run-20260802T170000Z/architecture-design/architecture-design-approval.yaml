@@ -1,0 +1,10 @@
+run_id: run-20260802T170000Z
+node_id: architecture-design
+action_id: architecture-design-approval
+classification: critical_design
+agent_rationale: "Phase 3 changes the persistence transaction model of a core write path (two-pass bulk: consolidated existence query + JDBC-batched saveAll under a transaction with a per-item fallback), a GLOBAL Hibernate setting (hibernate.jdbc.batch_size / order_inserts applies to all writes), and the ShortLink id-generation strategy (IDENTITY -> SEQUENCE, required to enable insert batching). Hard-to-reverse decisions with correctness implications for best-effort partial success under a Pass1->Pass2 TOCTOU race (RISK-021)."
+approved_by: user
+decision: approved
+timestamp: 2026-08-02T17:15:00Z
+raw_user_response: "Confirm"
+scope: "architecture-design Phase 3 (ADR-017..ADR-021) for intake INTAKE-20260802T170000Z-performance-improvement"
