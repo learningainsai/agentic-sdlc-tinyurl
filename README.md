@@ -42,33 +42,33 @@ quality guidance to those phases.
 
 ```mermaid
 flowchart TD
-  A[Initial product idea: TinyURL service] --> B[Inception: idea-refiner critique]
-  B --> C[Requirements artifact with REQ IDs]
-  C --> D{Human approval gate}
+  A["Initial product idea: TinyURL service"] --> B["Inception: idea-refiner critique"]
+  B --> C["Requirements artifact with REQ IDs"]
+  C --> D{"Human approval gate"}
   D -->|changes requested| B
-  D -->|approved| E[Architecture and NFR design]
-  E --> F[Unit decomposition]
-  F --> G[Construction plans per unit]
-  G --> H[Spring Boot + PostgreSQL implementation]
-  H --> I[JUnit, integration, and container tests]
-  I --> J[Documentation and code review]
-  J --> K[Security and release readiness gates]
+  D -->|approved| E["Architecture and NFR design"]
+  E --> F["Unit decomposition"]
+  F --> G["Construction plans per unit"]
+  G --> H["Spring Boot + PostgreSQL implementation"]
+  H --> I["JUnit, integration, and container tests"]
+  I --> J["Documentation and code review"]
+  J --> K["Security and release readiness gates"]
 ```
 
 ### Brownfield Enhancement Flow
 
 ```mermaid
 flowchart TD
-  A[Existing TinyURL behavior or defect] --> B[Recover current state and handoffs]
-  B --> C[Impact analysis against requirements, architecture, and unit registry]
-  C --> D[Inception delta: idea-refiner on enhancement scope]
-  D --> E{Human approval gate}
+  A["Existing TinyURL behavior or defect"] --> B["Recover current state and handoffs"]
+  B --> C["Impact analysis against requirements, architecture, and unit registry"]
+  C --> D["Inception delta: idea-refiner on enhancement scope"]
+  D --> E{"Human approval gate"}
   E -->|changes requested| D
-  E -->|approved| F[Update affected requirements and ADRs]
-  F --> G[Re-plan impacted units only]
-  G --> H[Implement bounded change]
-  H --> I[Regression, integration, and migration checks]
-  I --> J[Code review, security review, and release readiness]
+  E -->|approved| F["Update affected requirements and ADRs"]
+  F --> G["Re-plan impacted units only"]
+  G --> H["Implement bounded change"]
+  H --> I["Regression, integration, and migration checks"]
+  I --> J["Code review, security review, and release readiness"]
 ```
 
 ## Imported Copilot Assets

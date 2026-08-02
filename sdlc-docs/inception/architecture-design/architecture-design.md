@@ -32,7 +32,7 @@ flowchart LR
   C --> S[LinkService]
   S --> R[LinkRepository]
   R --> DB[(PostgreSQL / H2)]
-  U -->|GET /{code}| C
+  U -->|"GET /{code}"| C
   C -->|302 Location| U
 ```
 
