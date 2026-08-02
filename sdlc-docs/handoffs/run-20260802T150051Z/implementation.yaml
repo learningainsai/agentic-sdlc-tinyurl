@@ -1,0 +1,106 @@
+run_id: run-20260802T150051Z
+node_id: implementation
+phase: construction
+from_agent: construction
+to_agents: [testing, documentation]
+status: passed
+intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+input_artifacts:
+  - sdlc-docs/handoffs/run-20260802T150051Z/plan.yaml
+  - sdlc-docs/construction/units/unit-registry.yaml
+  - sdlc-docs/construction/plans/PLAN-001-backend.md
+  - sdlc-docs/construction/plans/PLAN-002-frontend.md
+  - sdlc-docs/inception/architecture-design/architecture-design.md
+output_artifacts:
+  - tiny-url-creator/backend/src/main/java/com/example/tinyurl/**
+  - tiny-url-creator/backend/src/test/java/com/example/tinyurl/**
+  - tiny-url-creator/frontend/src/app/**
+template_ids: []
+standards_applied:
+  - coding-standard
+  - testing-standard
+  - security-standard
+required_skills_run:
+  - unit-construction
+units_completed:
+  - unit_id: UNIT-001
+    status: passed
+    test_evidence: "./mvnw -o verify: 31 unit/slice + 3 IT (LinkFlowIT) passed; BUILD SUCCESS"
+  - unit_id: UNIT-002
+    status: passed
+    test_evidence: "ng build complete; ng test --watch=false 9 specs passed (ChromeHeadlessCI)"
+traceability_ids:
+  - REQ-011
+  - REQ-012
+  - REQ-013
+  - REQ-014
+  - REQ-015
+  - REQ-016
+  - REQ-017
+  - REQ-018
+  - REQ-019
+  - REQ-020
+  - ADR-010
+  - ADR-011
+  - ADR-012
+  - ADR-013
+  - ADR-014
+  - ADR-015
+  - ADR-016
+  - UNIT-001
+  - UNIT-002
+  - EN-5
+  - EN-6
+  - EN-7
+  - EN-8
+  - TEST-010
+  - TEST-011
+  - TEST-012
+  - TEST-013
+  - TEST-014
+  - TEST-015
+  - TEST-016
+  - TEST-017
+  - TEST-018
+decisions_made:
+  - "ADR-010: nullable expires_at Instant column added to ShortLink (NULL = never expires); backward-compatible constructors retained."
+  - "ADR-011/012: lazy expiry — LinkService.resolve throws CodeNotFoundException (404) when isExpired; Clock injected for testable boundaries; validateExpiry rejects <= now with InvalidExpiryException (400)."
+  - "ADR-013: POST /api/links/bulk accepts 1-100 items; createBulk is deliberately NOT @Transactional so per-item failures are isolated (best-effort partial success) with ordered per-item BulkItemResult."
+  - "ADR-014: shared RateLimiter bean with N-token tryAcquire; bulk rejected wholesale (429) when budget < item count, nothing created; single-create filter uses 1 token via RateLimitFilter."
+  - "Slice-test fix: Clock and RateLimiter beans moved to WebConfig (@Configuration) so @WebMvcTest slices resolve without AppProperties leaking; TinyUrlApplication reverted."
+  - "ADR-016: frontend converts datetime-local wall-clock to a UTC ISO instant via toUtcInstant before POST; bulk intentionally not exposed in the UI. link.service passes expiresAt through unchanged."
+  - "Removed the orphaned Phase-1 withdrawn-scope 'deactivate' test rather than commenting it out; orphaned frontend spec expectations updated to the ADR-016 UTC-conversion contract (flagged to human)."
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/implementation/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/implementation/exit-evidence.md
+validation_evidence:
+  - "Backend: cd tiny-url-creator/backend && ./mvnw -o verify => Tests run: 31 (unit/slice) + Tests run: 3 (LinkFlowIT); BUILD SUCCESS (rc=0)."
+  - "Frontend: cd tiny-url-creator/frontend && npm run build => Application bundle generation complete (rc=0); npm run test:ci => TOTAL: 9 SUCCESS (rc=0)."
+  - "Coding-standard: constructor injection throughout; DTOs over REST; @Valid at controller boundary; no entities exposed."
+  - "Security-standard: bulk bounded to 100 items + N-token rate limiting (A05 DoS mitigation); no secrets introduced; generic error bodies via GlobalExceptionHandler."
+approvals:
+  - by: human
+    decision: approved
+    verbatim: "confirm"
+    scope: "implementation high-impact (core_feature) construction authorization"
+    record: sdlc-docs/approvals/run-20260802T150051Z/implementation/implementation-high-impact-approval.yaml
+open_questions: []
+risks:
+  - id: RISK-011
+    severity: medium
+    description: "Bulk DoS amplification. Mitigated by max-100 cap + per-IP N-token limiting; verified by controller 400/429 tests."
+    status: mitigated
+  - id: RISK-012
+    severity: low
+    description: "Expired rows retained (no reaper). Cleanup deferred; alias stays permanently reserved (ADR-015)."
+    status: accepted
+compensating_actions: []
+next_ready_nodes: [testing, documentation]
+context_summary: >
+  Implementation node complete for Phase 2. Backend UNIT-001 delivers the nullable expires_at column,
+  lazy expiry on resolve (404), create-time expiry validation (400), and the bulk endpoint
+  POST /api/links/bulk with best-effort per-item results and shared N-token rate limiting (429).
+  Frontend UNIT-002 adds the optional expiry picker converting datetime-local to a UTC instant
+  (ADR-016) and renders the created link's expiry. All tests green: backend 34 (31 unit/slice + 3 IT),
+  frontend 9 specs; both builds succeed. High-impact construction was human-confirmed ('confirm').
+  Next: testing and documentation nodes may run in parallel, then release-readiness (human go/no-go).

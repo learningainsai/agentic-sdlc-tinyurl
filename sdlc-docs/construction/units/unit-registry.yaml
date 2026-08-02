@@ -1,20 +1,48 @@
 # Unit Registry (v2 §3)
 # Produced by the `unit-decomposition` node; consumed by `implementation` for parallel scheduling.
 # Schema: .github/sdlc/schemas/unit-registry.schema.md
-# This is an empty seed. The inception phase populates `units` from unit-decomposition-template.md.
+#
+# Active run is Phase 2 (expiry column + bulk creation). Phase 1 scope was delivered by
+# run-20260801T232309Z (retained in phase1_* fields for traceability). The `status`,
+# `requirements` and `expected_tests` below describe the CURRENT (Phase 2) work to be built.
 
-run_id: ""
+run_id: run-20260802T150051Z
 generated_by: unit-decomposition
-units: []
-#  - unit_id: UNIT-001
-#    name: ""
-#    owner_agent: construction
-#    depends_on_units: []
-#    requirements: []          # REQ-...
-#    design_refs: []           # ADR-...
-#    target_files: []          # conflict basis; concurrent units must not overlap
-#    expected_tests: []        # TEST-...
-#    documentation_refs: []    # DOC-...
-#    risk_level: low           # low | medium | high
-#    high_impact: false        # true => durable approval required (§8)
-#    status: pending           # pending | in_progress | passed | failed | blocked
+intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+units:
+  - unit_id: UNIT-001
+    name: Backend URL-shortener API — expiry + bulk
+    phase: 2
+    owner_agent: construction
+    depends_on_units: []
+    requirements: [REQ-011, REQ-012, REQ-013, REQ-014, REQ-015, REQ-016, REQ-017, REQ-018, REQ-019]
+    design_refs: [ADR-010, ADR-011, ADR-012, ADR-013, ADR-014, ADR-015]
+    target_files: ["tiny-url-creator/backend/**"]
+    expected_tests: [TEST-010, TEST-011, TEST-012, TEST-013, TEST-014, TEST-015, TEST-016]
+    documentation_refs: [DOC-003]
+    risk_level: medium
+    high_impact: false
+    status: passed
+    plan_ref: PLAN-001
+    phase2_test_evidence: "run-20260802T150051Z: ./mvnw -o verify 31 unit/slice + 3 IT (LinkFlowIT) passed; BUILD SUCCESS"
+    phase1_status: passed
+    phase1_requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-008, REQ-009, REQ-010]
+    phase1_test_evidence: "run-20260801T232309Z: mvn verify 18 unit + 1 IT (LinkFlowIT) passed; BUILD SUCCESS"
+  - unit_id: UNIT-002
+    name: Frontend submission UI — optional expiry picker
+    phase: 2
+    owner_agent: construction
+    depends_on_units: []
+    requirements: [REQ-020]
+    design_refs: [ADR-016]
+    target_files: ["tiny-url-creator/frontend/**"]
+    expected_tests: [TEST-017, TEST-018]
+    documentation_refs: [DOC-004]
+    risk_level: low
+    high_impact: false
+    status: passed
+    plan_ref: PLAN-002
+    phase2_test_evidence: "run-20260802T150051Z: ng build complete; ng test --watch=false 9 specs passed (ChromeHeadlessCI)"
+    phase1_status: passed
+    phase1_requirements: [REQ-007]
+    phase1_test_evidence: "run-20260801T232309Z: ng test 6 specs passed; ng build complete"

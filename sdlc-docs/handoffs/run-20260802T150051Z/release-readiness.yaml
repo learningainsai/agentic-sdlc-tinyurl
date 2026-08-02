@@ -1,0 +1,78 @@
+run_id: run-20260802T150051Z
+node_id: release-readiness
+phase: construction
+from_agent: construction
+to_agents: []
+status: passed
+intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+input_artifacts:
+  - sdlc-docs/handoffs/run-20260802T150051Z/testing.yaml
+  - sdlc-docs/handoffs/run-20260802T150051Z/documentation.yaml
+  - sdlc-docs/construction/code-review/code-review.md
+  - sdlc-docs/construction/code-review/security-review.md
+output_artifacts:
+  - sdlc-docs/release-readiness/release-readiness.md
+template_ids:
+  - release-readiness-template.md
+  - code-review-template.md
+  - security-review-template.md
+standards_applied:
+  - code-review-standard
+  - release-readiness-standard
+  - security-standard
+required_skills_run: []
+traceability_ids:
+  - REL-010
+  - REL-011
+  - REL-012
+  - REL-013
+  - REL-014
+  - REL-015
+  - REL-016
+  - REL-017
+  - REL-018
+  - REL-019
+  - REQ-011
+  - REQ-012
+  - REQ-013
+  - REQ-014
+  - REQ-015
+  - REQ-016
+  - REQ-017
+  - REQ-018
+  - REQ-019
+  - REQ-020
+decisions_made:
+  - "Human release decision: Go. Release-readiness entry and exit gates approved for Phase 2."
+  - "Recommendation remains ready; no automated deploy performed because operations is explicitly a human decision in workflow-graph.yaml."
+  - "Phase 2 traceability is complete: REQ-011..020 all linked through ADR, UNIT, PLAN, TEST, DOC, CR/SEC, and REL evidence."
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/release-readiness/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/release-readiness/exit-evidence.md
+validation_evidence:
+  - "Release package prepared and reviewed: code-review.md passed, security-review.md passed, release-readiness.md recommendation ready."
+  - "Backend validation: ./mvnw -o verify => BUILD SUCCESS; Frontend validation: npm run build + npm run test:ci => success."
+  - "Human approval recorded in sdlc-docs/approvals/run-20260802T150051Z/release-readiness/release-readiness-go-approval.yaml."
+approvals:
+  - by: human
+    decision: approved
+    verbatim: "Go"
+    scope: "release-readiness entry/exit gates for Phase 2"
+    record: sdlc-docs/approvals/run-20260802T150051Z/release-readiness/release-readiness-go-approval.yaml
+open_questions: []
+risks:
+  - id: RISK-004
+    severity: low
+    description: "Rate limiter remains in-memory/per-instance. Accepted baseline constraint."
+    status: accepted
+  - id: RISK-012
+    severity: low
+    description: "Expired rows are retained; no reaper in this phase. Accepted."
+    status: accepted
+compensating_actions: []
+next_ready_nodes: []
+context_summary: >
+  Release-readiness passed for Phase 2. Implementation, testing, and documentation all completed
+  successfully; the release package documents backend expiry and bulk creation plus frontend expiry
+  picker behavior, with green validation and no unresolved high/critical findings. The human issued
+  a Go decision, which approved the release-readiness node only; no automated deployment was run.

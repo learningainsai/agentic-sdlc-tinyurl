@@ -1,0 +1,93 @@
+run_id: run-20260801T232309Z
+node_id: implementation
+phase: construction
+from_agent: construction
+to_agents: [construction]
+status: passed
+input_artifacts:
+  - sdlc-docs/construction/units/unit-registry.yaml
+  - sdlc-docs/inception/architecture-design/architecture-design.md
+output_artifacts:
+  - sdlc-docs/construction/plans/PLAN-001-backend.md
+  - sdlc-docs/construction/plans/PLAN-002-frontend.md
+  - sdlc-docs/construction/units/unit-registry.yaml
+  - tiny-url-creator/backend/**
+  - tiny-url-creator/frontend/**
+template_ids:
+  - implementation-plan-template.md
+standards_applied:
+  - coding-standard
+  - security-standard
+traceability_ids:
+  - PLAN-001
+  - PLAN-002
+  - UNIT-001
+  - UNIT-002
+  - REQ-001
+  - REQ-002
+  - REQ-003
+  - REQ-004
+  - REQ-005
+  - REQ-006
+  - REQ-007
+  - REQ-008
+  - REQ-009
+  - REQ-010
+  - ADR-001
+  - ADR-002
+  - ADR-003
+  - ADR-004
+  - ADR-005
+  - ADR-006
+  - ADR-007
+  - ADR-008
+  - ADR-009
+  - TEST-001
+  - TEST-002
+  - TEST-003
+  - TEST-004
+  - TEST-005
+  - TEST-006
+  - TEST-007
+  - TEST-008
+  - TEST-009
+units_completed:
+  - unit_id: UNIT-001
+    plan_ref: PLAN-001
+    status: passed
+    test_evidence: "mvn verify — 18 unit tests + 1 integration test (LinkFlowIT) passed; BUILD SUCCESS"
+  - unit_id: UNIT-002
+    plan_ref: PLAN-002
+    status: passed
+    test_evidence: "ng test (ChromeHeadless) — 6 specs incl. TEST-008/TEST-009 passed; ng build succeeded"
+decisions_made:
+  - "High-impact implementation confirmed by user (verbatim: 'Confirm'); durable record: approvals/run-20260801T232309Z/implementation/implementation-approval.yaml (decision: approved)."
+  - "RateLimitFilter registered via WebConfig FilterRegistrationBean instead of @Component so @WebMvcTest slices load without AppProperties."
+  - "UNIT-001 and UNIT-002 built in parallel by disjoint target files (backend/** vs frontend/**)."
+approvals:
+  - action_id: implementation-approval
+    decision: approved
+    record: sdlc-docs/approvals/run-20260801T232309Z/implementation/implementation-approval.yaml
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260801T232309Z/implementation/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260801T232309Z/implementation/exit-evidence.md
+validation_evidence:
+  - "Backend: `JAVA_HOME=JDK21 ./mvnw -B verify` => Tests run: 18 (unit) + 1 (IT), Failures: 0, Errors: 0; BUILD SUCCESS."
+  - "Frontend: `ng test --watch=false --browsers=ChromeHeadlessCI` => 6 SUCCESS; `ng build` => bundle generation complete."
+  - "Template compliance: PLAN-001/PLAN-002 declare implementation-plan-template.md with all required sections."
+  - "Security-standard: parameterized JPA access, DTOs (no entity exposure), @Valid input validation, per-IP rate limiting, no secrets in code, generic error responses."
+open_questions: []
+risks:
+  - id: RISK-004
+    severity: low
+    description: "In-memory per-IP rate limiter is per-instance (single-instance MVP)."
+    status: accepted
+compensating_actions: []
+next_ready_nodes: [testing, documentation]
+context_summary: >
+  Construction implementation is complete. Both independent units are built and green: UNIT-001 (Spring
+  Boot backend REST API — create + redirect, custom alias, Base62 code generation, validation, per-IP
+  rate limiting) and UNIT-002 (Angular standalone submission UI — reactive form, LinkService HTTP,
+  copy-to-clipboard, inline errors). All expected tests (TEST-001..009) pass; backend `mvn verify` and
+  frontend `ng test`/`ng build` succeed. The implementation node's high-impact gate was satisfied by a
+  durable approval record. The ready set is now {testing, documentation}, which may run in parallel.

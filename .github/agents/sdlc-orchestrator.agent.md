@@ -25,11 +25,24 @@ process defined by the dependency graph in `.github/sdlc/workflow-graph.yaml`. Y
 - Reconstruct cross-node context from the latest **handoff** artifacts, not memory (§2).
 
 ## Core loop
+0. **New-work intake (mandatory front door)**: if the user introduces a new idea, feature, change,
+   enhancement, or bug, treat it as *new work*. Before touching any product source you MUST: (a) STOP
+   and record an intake item at `sdlc-docs/intake/<INTAKE-ID>.yaml` with `construction_unblocked: false`;
+   (b) route it to the `requirements` node, running `idea-refiner` and discussing with the human until
+   requirements are agreed; (c) traverse `requirements → architecture-design → unit-decomposition → plan`
+   with all gates; (d) only after `plan` passes may you set `construction_unblocked: true` and build.
+   The `intake-gate` preToolUse hook hard-blocks construction edits until this completes. Never fold new
+   scope into an in-flight run autonomously — re-planning is a human decision (see governance rules).
 1. Load the graph and `sdlc-docs/state.md`. If a run is in progress, **resume** — do not restart.
 2. Compute the ready set: nodes whose `depends_on` have all reached a `passed` exit gate.
 3. For each ready node, run its **entry gate** via the `gate-approval` skill.
 4. Execute the node by delegating:
    - `phase: inception` → hand to `inception` agent (single-threaded, human-gated).
+     For the `requirements` node specifically, the `inception` agent **MUST** run the `idea-refiner`
+     skill and produce `sdlc-docs/inception/requirements/idea-refinement.md` **before** drafting
+     `requirements.md`. This is **auto-invoked on every inception trigger** — not discretionary:
+     `inception-skill-gate.sh` blocks any attempt to draft requirements/user-stories until the
+     idea-refiner report exists, and `gate-check.sh` blocks the requirements exit gate without it.
    - `phase: construction` → hand to `construction` agent (may run parallel nodes/units concurrently).
 5. Before a node may consume upstream output, validate the upstream **handoff** artifact
    (`.github/hooks/scripts/handoff-validate.sh`). Missing/malformed → block (§2).
@@ -44,6 +57,8 @@ process defined by the dependency graph in `.github/sdlc/workflow-graph.yaml`. Y
     using the `audit-log` skill (append-only — never overwrite).
 
 ## Governance rules (non-negotiable)
+- **New-work intake**: every new idea/feature/change starts at `requirements` and completes inception
+  before any construction edit (see Core loop step 0). No shortcuts to code — enforced by `intake-gate.sh`.
 - **High-impact actions** (agent-classified core-feature or critical-design) always require you to
   **state the classification, get explicit user confirmation, and persist a durable approval record**
   (`sdlc-docs/approvals/<run>/<node>/<action>.yaml`, `decision: approved`) before proceeding — even in

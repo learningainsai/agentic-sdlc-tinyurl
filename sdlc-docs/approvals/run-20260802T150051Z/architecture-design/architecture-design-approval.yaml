@@ -1,0 +1,10 @@
+run_id: run-20260802T150051Z
+node_id: architecture-design
+action_id: architecture-design-approval
+classification: critical_design
+agent_rationale: "Phase 2 changes the public API contract (extended create response, new POST /api/links/bulk endpoint, new expired->404 redirect failure mode), the persistence schema (nullable expires_at column + migration), and the rate-limiting architecture (shared RateLimiter, N-token bulk accounting). Core, hard-to-reverse decisions with direct security/abuse implications."
+approved_by: user
+decision: approved
+timestamp: 2026-08-02T15:00:51Z
+raw_user_response: "Approve"
+scope: "architecture-design Phase 2 (ADR-010..ADR-016) for intake INTAKE-20260802T150051Z-expiry-and-bulk-creation"

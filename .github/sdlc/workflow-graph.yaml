@@ -7,6 +7,8 @@
 #
 # Semantics (v1):
 #   phase:        inception (single-threaded, human-gated) | construction (multi-agent, concurrent)
+#                 inception sequence: requirements -> architecture-design -> unit-decomposition -> plan
+#                 (plan produces the MANDATORY breakdown deliverables under sdlc-docs/inception/plan/)
 #   depends_on:   node ids that must reach `passed` exit gate before this node may start
 #   parallel:     true => may run concurrently with siblings sharing the same depends_on set
 #   entry_gate/exit_gate:
@@ -41,6 +43,27 @@ failure_policy:
   parallel_conflict: human_decision # S6
   policy_error: block               # v2 §7 — `error` treated as `block` unless human authorizes
 
+# New-work intake gate — the single mandatory front door for any new idea/feature/change.
+# Enforced by .github/hooks/scripts/intake-gate.sh (preToolUse) + common/new-work-intake.md.
+# Guarantees no idea skips inception: construction edits to product source are blocked until the
+# idea's intake record reaches construction_unblocked: true (only after the plan node passes).
+new_work_policy:
+  entry_node: requirements          # every new idea enters here — no shortcuts to construction
+  required_skills: [idea-refiner]   # must run before requirements are drafted/agreed
+  auto_invoke_on_inception_entry: [idea-refiner]  # implicitly triggered whenever inception starts
+  intake_dir: sdlc-docs/intake
+  intake_record: "sdlc-docs/intake/{intake_id}.yaml"
+  unblock_after: plan               # construction_unblocked may flip true only after plan passes
+  replan_on_new_scope: human_decision   # never fold new scope into an in-flight run autonomously (S5)
+  guarded_paths:                    # product source that requires an inception-authorized intake
+    - tiny-url-creator/
+    - "**/backend/"
+    - "**/frontend/"
+  never_guarded:                    # governance/spec paths are always editable
+    - sdlc-docs/
+    - .github/
+    - docs/
+
 persistence:
   state_file: sdlc-docs/state.md
   audit_log: sdlc-docs/audit-log.md
@@ -54,6 +77,7 @@ persistence:
 rules:
   root: .github/sdlc/rules
   always_load:                      # common rules loaded at workflow start (§5)
+    - common/new-work-intake.md     # mandatory intake gate: new work must start at inception
     - common/process-overview.md
     - common/session-continuity.md
     - common/content-validation.md
@@ -113,8 +137,14 @@ nodes:
     depends_on: []
     templates: [requirements-template.md, user-story-template.md]
     standards: [documentation-standard]
+    # v2 §5 — idea-refiner MUST run before any requirements artifact is drafted.
+    # Its report is a required output artifact, so the exit gate cannot pass without it.
+    required_skills: [idea-refiner]
+    auto_invoke_skills: [idea-refiner]   # implicitly invoked on inception entry; enforced by
+                                         # inception-skill-gate.sh (pre) + gate-check.sh (exit)
     input_artifacts: []
     output_artifacts:
+      - sdlc-docs/inception/requirements/idea-refinement.md
       - sdlc-docs/inception/requirements/requirements.md
     entry_gate: { approval: none, policy: [change-control] }
     exit_gate:  { approval: required, policy: [compliance] }
@@ -165,12 +195,45 @@ nodes:
       path: "sdlc-docs/handoffs/{run_id}/{node_id}.yaml"
     policy_evidence_path: "sdlc-docs/policy-evidence/{run_id}/{node_id}/"
 
+  - id: plan
+    phase: inception
+    agent: inception
+    parallel: false
+    depends_on: [unit-decomposition]
+    # v2 §5 — breakdown-plan produces the mandatory inception plan; breakdown-test produces the
+    # mandatory inception test strategy / QA plan so testing is planned before construction.
+    required_skills: [breakdown-plan, breakdown-test]
+    templates:
+      - project-plan-template.md
+      - issues-checklist-template.md
+      - test-strategy-template.md
+      - test-issues-checklist-template.md
+      - qa-plan-template.md
+    standards: [documentation-standard, testing-standard]
+    input_artifacts:
+      - sdlc-docs/inception/requirements/requirements.md
+      - sdlc-docs/inception/requirements/user-stories.md
+      - sdlc-docs/inception/architecture-design/architecture-design.md
+      - sdlc-docs/construction/units/unit-registry.yaml
+    output_artifacts:
+      - sdlc-docs/inception/plan/project-plan.md
+      - sdlc-docs/inception/plan/issues-checklist.md
+      - sdlc-docs/inception/plan/test-strategy.md
+      - sdlc-docs/inception/plan/test-issues-checklist.md
+      - sdlc-docs/inception/plan/qa-plan.md
+    entry_gate: { approval: none, policy: [change-control] }
+    exit_gate:  { approval: required, policy: [compliance] }
+    handoff:
+      required: true
+      path: "sdlc-docs/handoffs/{run_id}/{node_id}.yaml"
+    policy_evidence_path: "sdlc-docs/policy-evidence/{run_id}/{node_id}/"
+
   # ---------------- CONSTRUCTION (multi-agent, concurrent autonomy) ----------------
   - id: implementation
     phase: construction
     agent: construction
     parallel: true
-    depends_on: [architecture-design, unit-decomposition]
+    depends_on: [architecture-design, unit-decomposition, plan]
     high_impact: true               # building core features => durable confirmation (§8)
     templates: [functional-design-template.md, implementation-plan-template.md]
     standards: [coding-standard, security-standard]

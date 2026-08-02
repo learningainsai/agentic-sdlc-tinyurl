@@ -1,0 +1,75 @@
+run_id: run-20260802T150051Z
+node_id: architecture-design
+phase: inception
+from_agent: inception
+to_agents: [inception]
+status: passed
+intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+high_impact: true
+input_artifacts:
+  - sdlc-docs/inception/requirements/requirements.md
+  - sdlc-docs/handoffs/run-20260802T150051Z/requirements.yaml
+output_artifacts:
+  - sdlc-docs/inception/architecture-design/architecture-design.md
+template_ids:
+  - architecture-design-template.md
+  - nfr-requirements-template.md
+  - nfr-design-template.md
+standards_applied:
+  - security-standard
+  - coding-standard
+traceability_ids:
+  - ADR-010
+  - ADR-011
+  - ADR-012
+  - ADR-013
+  - ADR-014
+  - ADR-015
+  - ADR-016
+decisions_made:
+  - "ADR-010: nullable expires_at TIMESTAMP column; NULL = never expires; backward-compatible migration."
+  - "ADR-011: lazy expiry in LinkService.resolve => expired returns 404; no reaper; rows retained."
+  - "ADR-012: optional CreateLinkRequest.expiresAt (ISO-8601 UTC Instant); past/now => 400 via InvalidExpiryException."
+  - "ADR-013: new POST /api/links/bulk (1-100 items); best-effort partial success; ordered per-item results."
+  - "ADR-014: shared RateLimiter bean; bulk consumes N tokens; budget < N => whole request 429 (nothing created)."
+  - "ADR-015: expired code/alias permanently reserved (uniqueness across all rows)."
+  - "ADR-016: frontend optional expiry picker (datetime-local -> UTC ISO); bulk API-only in Phase 2."
+approvals:
+  - by: user
+    decision: approved
+    verbatim: "Approve"
+    record: sdlc-docs/approvals/run-20260802T150051Z/architecture-design/architecture-design-approval.yaml
+    classification: critical_design
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/architecture-design/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/architecture-design/exit-evidence.md
+validation_evidence:
+  - "Template compliance: architecture-design-template.md sections present (Phase 2 §9 added additively)."
+  - "High-impact: durable approval record present with decision: approved."
+  - "Security-standard: bulk DoS bounded (max-100 + N-token limit); per-item validation; no existence leak on expiry."
+open_questions: []
+risks:
+  - id: RISK-011
+    severity: medium
+    description: "Bulk DoS amplification. Mitigated by max-100 cap + per-IP N-token rate limiting enforced before processing."
+    status: mitigated
+  - id: RISK-012
+    severity: low
+    description: "Expired rows retained indefinitely (no reaper) => table growth. Cleanup deferred."
+    status: accepted
+  - id: RISK-014
+    severity: low
+    description: "In-memory shared RateLimiter is per-instance; N-token accounting per replica (inherits RISK-004)."
+    status: accepted
+compensating_actions: []
+branch_decision: needs_decomposition
+next_ready_nodes: [unit-decomposition]
+context_summary: >
+  Phase 2 architecture approved by the user (durable record, critical_design). Seven ADRs
+  (ADR-010..ADR-016): a nullable expires_at column with lazy read-time enforcement (expired => 404,
+  no reaper, aliases permanently reserved); an optional absolute-UTC expiresAt on single create with
+  past/now rejected as 400; a new POST /api/links/bulk endpoint (1-100 items, best-effort partial
+  success, ordered per-item results) bounded to cap DoS; a shared RateLimiter with N-token bulk
+  accounting (budget < N => whole-request 429); and an optional frontend expiry picker (bulk API-only).
+  Only schema change is one nullable column. Branch => needs_decomposition (backend UNIT-001 +
+  frontend UNIT-002 both affected). Next: unit-decomposition.

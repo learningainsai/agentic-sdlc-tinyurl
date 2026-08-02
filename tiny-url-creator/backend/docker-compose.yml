@@ -1,0 +1,24 @@
+# Local dev PostgreSQL for the TinyURL backend (dev profile).
+# Usage: cd tiny-url-creator/backend && docker compose up -d
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tinyurl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tinyurl
+      POSTGRES_USER: tinyurl
+      # Dev-only credential; production uses env-injected secrets (prod profile).
+      POSTGRES_PASSWORD: tinyurl
+    ports:
+      - "5432:5432"
+    volumes:
+      - tinyurl-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tinyurl -d tinyurl"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  tinyurl-pgdata:

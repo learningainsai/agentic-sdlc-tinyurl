@@ -1,0 +1,12 @@
+intake_id: INTAKE-20260801T232309Z-original-scope
+raw_request: "Original TinyURL creator scope (URL shortening + redirect) delivered by run-20260801T232309Z."
+classification: feature
+high_impact: true
+run_id: run-20260801T232309Z
+entry_node: requirements
+current_phase: construction
+construction_unblocked: true   # backfilled: this run's inception (requirements..plan) already passed
+created: 2026-08-02T00:00:00Z
+notes: >
+  Backfill record for the already-completed run so the intake gate reflects prior, properly-gated
+  inception work. Introduced when the new-work intake gate was added.

@@ -1,0 +1,41 @@
+run_id: run-20260802T150051Z
+node_id: implementation
+action_id: implementation-high-impact-approval
+classification: core_feature
+high_impact: true
+decision: approved
+approved_by: human
+approved_verbatim: "confirm"
+timestamp: 2026-08-02T15:00:51Z
+intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+scope: >
+  Authorizes product-source edits for the construction implementation node of Phase 2
+  (expiry + bulk creation). Covers UNIT-001 (backend) and UNIT-002 (frontend).
+rationale:
+  - "Redirect hot-path change: lazy expiry in LinkService.resolve() (expired => 404) affects every redirect."
+  - "New abuse/DoS surface: POST /api/links/bulk (1-100 items) + RateLimitFilter refactor to shared RateLimiter (N-token)."
+  - "Schema change: nullable expires_at column + migration on the short link entity."
+traceability_ids:
+  - REQ-011
+  - REQ-012
+  - REQ-013
+  - REQ-014
+  - REQ-015
+  - REQ-016
+  - REQ-017
+  - REQ-018
+  - REQ-019
+  - REQ-020
+  - ADR-010
+  - ADR-011
+  - ADR-012
+  - ADR-013
+  - ADR-014
+  - ADR-015
+  - ADR-016
+  - UNIT-001
+  - UNIT-002
+conditions:
+  - "Constructor injection only; DTOs over REST (never entities); @Valid on all inputs."
+  - "A JUnit test per new endpoint; Phase 1 regression must stay green."
+  - "No pom.xml / package.json version changes or new libraries without flagging."

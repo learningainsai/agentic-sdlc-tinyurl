@@ -1,0 +1,68 @@
+run_id: run-20260802T150051Z
+node_id: testing
+phase: construction
+from_agent: construction
+to_agents: [release-readiness]
+status: passed
+intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+input_artifacts:
+  - sdlc-docs/handoffs/run-20260802T150051Z/implementation.yaml
+  - sdlc-docs/construction/plans/PLAN-001-backend.md
+  - sdlc-docs/construction/plans/PLAN-002-frontend.md
+  - sdlc-docs/inception/plan/test-strategy.md
+  - sdlc-docs/inception/plan/qa-plan.md
+output_artifacts:
+  - sdlc-docs/construction/testing/test-plan.md
+template_ids:
+  - test-plan-template.md
+standards_applied:
+  - testing-standard
+required_skills_run: []
+traceability_ids:
+  - TEST-010
+  - TEST-011
+  - TEST-012
+  - TEST-013
+  - TEST-014
+  - TEST-015
+  - TEST-016
+  - TEST-017
+  - TEST-018
+  - REQ-011
+  - REQ-012
+  - REQ-013
+  - REQ-014
+  - REQ-015
+  - REQ-016
+  - REQ-017
+  - REQ-018
+  - REQ-019
+  - REQ-020
+  - UNIT-001
+  - UNIT-002
+decisions_made:
+  - "Phase 2 test plan supersedes Phase 1; Phase 1 suite retained as a mandatory regression baseline."
+  - "Expiry boundaries tested deterministically via an injected fixed Clock (past/present/future)."
+  - "Bulk endpoint verified for partial success, per-item error codes, batch bounds (0/101), and 429 over budget."
+  - "Frontend datetime-local -> UTC conversion (ADR-016) asserted at the service boundary; expiry rendering asserted in the component."
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/testing/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/testing/exit-evidence.md
+validation_evidence:
+  - "Backend: ./mvnw -o verify => Tests run: 31 (unit/slice) + Tests run: 3 (LinkFlowIT); Failures: 0, Errors: 0; BUILD SUCCESS (rc=0)."
+  - "Frontend: npm run build => bundle complete (rc=0); npm run test:ci => TOTAL: 9 SUCCESS (rc=0)."
+  - "Template compliance: test-plan.md declares template_id test-plan-template.md; testing-standard sections present."
+open_questions: []
+risks:
+  - id: RISK-011
+    severity: medium
+    description: "Bulk DoS amplification. Verified mitigated by 100-item cap (400) + N-token rate limit (429)."
+    status: mitigated
+compensating_actions: []
+next_ready_nodes: [release-readiness]
+context_summary: >
+  Testing node passed for Phase 2. The test plan documents backend expiry validation, lazy expiry,
+  and bulk best-effort semantics plus the frontend UTC-conversion contract, all traced to REQ-011..020
+  and TEST-010..018. Execution evidence: backend 34 tests (31 unit/slice + 3 IT) and frontend 9 specs
+  all green with successful builds. Phase 1 regression suite re-run green. Converges with documentation
+  at release-readiness (human go/no-go).

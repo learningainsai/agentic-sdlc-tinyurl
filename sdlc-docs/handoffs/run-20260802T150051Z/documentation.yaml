@@ -1,0 +1,64 @@
+run_id: run-20260802T150051Z
+node_id: documentation
+phase: construction
+from_agent: construction
+to_agents: [release-readiness]
+status: passed
+intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+input_artifacts:
+  - sdlc-docs/handoffs/run-20260802T150051Z/implementation.yaml
+  - sdlc-docs/construction/plans/PLAN-001-backend.md
+  - sdlc-docs/construction/plans/PLAN-002-frontend.md
+output_artifacts:
+  - sdlc-docs/construction/documentation/documentation-plan.md
+  - tiny-url-creator/backend/README.md
+  - tiny-url-creator/frontend/README.md
+template_ids:
+  - documentation-plan-template.md
+standards_applied:
+  - documentation-standard
+required_skills_run: []
+traceability_ids:
+  - DOC-003
+  - DOC-004
+  - REQ-011
+  - REQ-012
+  - REQ-013
+  - REQ-014
+  - REQ-015
+  - REQ-016
+  - REQ-017
+  - REQ-018
+  - REQ-019
+  - REQ-020
+  - UNIT-001
+  - UNIT-002
+  - ADR-010
+  - ADR-011
+  - ADR-012
+  - ADR-013
+  - ADR-014
+  - ADR-015
+  - ADR-016
+decisions_made:
+  - "DOC-003 documents the Phase 2 backend API: optional expiresAt on create, POST /api/links/bulk with per-item results, expiry-aware redirect (404 on expired), and N-token rate limiting (429)."
+  - "DOC-004 documents the frontend optional expiry picker and the datetime-local -> UTC conversion (ADR-016), including that the created link's expiry is shown."
+  - "READMEs updated in place (no tool-generated docs) so they stay the single source alongside the code."
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/documentation/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T150051Z/documentation/exit-evidence.md
+validation_evidence:
+  - "Docs authored against verified code (backend ./mvnw -o verify green; frontend build + test:ci green)."
+  - "Template compliance: documentation-plan.md declares template_id documentation-plan-template.md; documentation-standard sections present."
+  - "API examples in the backend README match the DTO contract (CreateLinkRequest, BulkCreateRequest, BulkItemResult)."
+open_questions: []
+risks: []
+compensating_actions: []
+next_ready_nodes: [release-readiness]
+context_summary: >
+  Documentation node passed for Phase 2. The backend README (DOC-003) now documents the optional
+  expiresAt field, the bulk endpoint with best-effort per-item results and error codes, the
+  expiry-aware redirect, and the N-token rate limiter; the frontend README (DOC-004) documents the
+  optional expiry picker with datetime-local -> UTC conversion. All docs trace to REQ-011..020,
+  ADR-010..016, UNIT-001/002 and were written against verified code. Converges with testing at
+  release-readiness (human go/no-go).

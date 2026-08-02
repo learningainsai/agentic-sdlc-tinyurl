@@ -1,0 +1,77 @@
+run_id: run-20260801T232309Z
+node_id: architecture-design
+phase: inception
+from_agent: inception
+to_agents: [inception]
+status: passed
+input_artifacts:
+  - sdlc-docs/inception/requirements/requirements.md
+output_artifacts:
+  - sdlc-docs/inception/architecture-design/architecture-design.md
+template_ids:
+  - architecture-design-template.md
+  - nfr-requirements-template.md
+  - nfr-design-template.md
+standards_applied:
+  - security-standard
+  - coding-standard
+traceability_ids:
+  - ADR-001
+  - ADR-002
+  - ADR-003
+  - ADR-004
+  - ADR-005
+  - ADR-006
+  - ADR-007
+  - ADR-008
+  - ADR-009
+  - REQ-001
+  - REQ-002
+  - REQ-003
+  - REQ-004
+  - REQ-005
+  - REQ-006
+  - REQ-007
+  - REQ-008
+  - REQ-009
+  - REQ-010
+decisions_made:
+  - "High-impact critical_design approved (verbatim: 'confirm')."
+  - "Layered Spring Boot API + Angular standalone SPA (ADR-001/002)."
+  - "Single short_link table, unique code; 302 redirect; 7-char Base62 code + retry (ADR-003/004/005)."
+  - "Alias policy + 409/400 error handling; http/https only + SSRF-safe (no server-side fetch) (ADR-006/007)."
+  - "In-memory per-IP rate limiter, no new dependency; distributed limiter deferred (ADR-008)."
+  - "Uniform ErrorResponse via @RestControllerAdvice (ADR-009)."
+approvals:
+  - sdlc-docs/approvals/run-20260801T232309Z/architecture-design/architecture-design-approval.yaml
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260801T232309Z/architecture-design/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260801T232309Z/architecture-design/exit-evidence.md
+validation_evidence:
+  - "Template compliance: architecture-design-template.md required sections present; NFR coverage embedded."
+  - "security-standard: SEC-INPUT-01, SEC-SECRET-01, SEC-AUTHZ-01, SEC-AUDIT-01 addressed; no open high/critical SEC findings."
+open_questions: []
+risks:
+  - id: RISK-002
+    severity: medium
+    description: "Public redirect to arbitrary user-supplied URLs enables phishing/malware sharing. Mitigated by scheme allowlist, max length, self-host rejection, per-IP rate limiting; domain blocklisting deferred to Phase 2."
+    status: accepted
+  - id: RISK-003
+    severity: low
+    description: "Generated-code collision under concurrency; mitigated by DB unique constraint + bounded retry."
+    status: mitigated
+  - id: RISK-004
+    severity: low
+    description: "In-memory rate limiter is per-instance; not shared across replicas. Acceptable for single-instance MVP."
+    status: accepted
+compensating_actions: []
+next_ready_nodes: [unit-decomposition]
+context_summary: >
+  Architecture and design for the TinyURL MVP approved as a high-impact critical_design decision.
+  Layered Spring Boot REST API (POST /api/links, GET /{code} -> 302) backed by a single short_link
+  table in PostgreSQL/H2 with a unique code constraint; 7-char Base62 codes via SecureRandom with
+  bounded retry; custom-alias validation (regex + reserved words, 409 on collision); http/https-only
+  input with max length and self-host rejection and no server-side fetch (SSRF-safe); in-memory
+  per-IP rate limiter (no new dependency); uniform ErrorResponse via @RestControllerAdvice. Angular
+  standalone SPA submission form calling a LinkService. Nine ADRs trace to REQ-001..REQ-010. Branch
+  decision (decompose vs single-unit) is pending human input before proceeding.
