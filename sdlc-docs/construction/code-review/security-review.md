@@ -1,16 +1,29 @@
 <!-- template_id: security-review-template.md -->
 <!-- v2 §4 mandatory template. Enforced by security-standard (§6); part of release readiness. -->
 
-# Security Review — run-20260802T150051Z (TinyURL Phase 2 — expiry + bulk creation)
+# Security Review — run-20260802T170000Z (TinyURL Phase 3 — bulk DB-query optimization)
 
 - **template_id**: security-review-template.md
-- **run_id**: run-20260802T150051Z
+- **run_id**: run-20260802T170000Z
 - **status**: passed
-- **supersedes**: run-20260801T232309Z (Phase 1 MVP) security review
+- **supersedes**: run-20260802T150051Z (Phase 2) security review
 
 ## 1. Findings (required)
 
-### Phase 2 findings (this run)
+### Phase 3 findings (this run)
+
+| SEC id | Area | Severity | Finding | Status | Evidence |
+|--------|------|----------|---------|--------|----------|
+| SEC-015 | injection | — | New `findExistingCodes(Collection)` uses a parameterized JPQL `IN (:codes)` binding (no string concatenation); the batched `saveAll` uses Spring Data JPA parameterized inserts. No new SQL/JPQL injection surface (A05). | resolved | LinkRepository `@Query`, BulkPersistenceIT |
+| SEC-016 | availability / DoS | — | Bulk remains bounded to 1–100 items and gated by the shared N-token rate limiter (unchanged, ADR-014). The optimization reduces DB load per accepted batch (≤ ~10 statements/50 items), *lowering* amplification risk; no change to request limits or auth. | resolved | RateLimiter, TEST-019 |
+| SEC-017 | data-integrity | — | Intra-batch code uniqueness enforced in memory before persistence; persisted collisions resolved via `findExistingCodes` and the DB unique constraint (fallback `createOneCatching` on `DataIntegrityViolationException`) — no duplicate codes can be committed (ADR-021). Best-effort partial-success semantics preserved (TEST-020). | resolved | LinkService `createBulk`, BulkPersistenceIT |
+| SEC-018 | error-handling | — | Per-item error codes and the uniform `ErrorResponse` are unchanged; no stack traces or internal detail leak through the new batched path. | resolved | BulkItemResult, TEST-020 |
+
+> No secrets, auth, transport, or input-validation surface changed this phase. Prod schema caveat
+> (`short_link_seq` must pre-exist under `ddl-auto: validate`, RISK-023) is an operability item raised
+> to release-readiness, not a security finding.
+
+### Phase 2 findings (baseline)
 
 | SEC id | Area | Severity | Finding | Status | Evidence |
 |--------|------|----------|---------|--------|----------|

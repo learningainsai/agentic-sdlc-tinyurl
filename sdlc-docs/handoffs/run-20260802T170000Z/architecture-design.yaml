@@ -1,0 +1,77 @@
+run_id: run-20260802T170000Z
+node_id: architecture-design
+phase: inception
+from_agent: inception
+to_agents: [inception]
+status: passed
+intake_id: INTAKE-20260802T170000Z-performance-improvement
+input_artifacts:
+  - sdlc-docs/inception/requirements/requirements.md
+  - sdlc-docs/handoffs/run-20260802T170000Z/requirements.yaml
+output_artifacts:
+  - sdlc-docs/inception/architecture-design/architecture-design.md
+template_ids:
+  - architecture-design-template.md
+standards_applied:
+  - security-standard
+  - coding-standard
+traceability_ids:
+  - ADR-017
+  - ADR-018
+  - ADR-019
+  - ADR-020
+  - ADR-021
+decisions_made:
+  - "ADR-017: two-pass bulk algorithm — Pass 1 validate + assign codes + consolidated existence check in memory (invalid/duplicate items become per-item errors); Pass 2 saveAll under one transaction so JDBC batching applies. Preserves API contract (REQ-022) and best-effort partial success (REQ-023)."
+  - "ADR-018: enable Hibernate JDBC batching in application.yml (batch_size:50, order_inserts) — HUMAN APPROVED (REQ-025). Requires ShortLink id strategy IDENTITY -> SEQUENCE (pooled) because IDENTITY disables insert batching in Hibernate."
+  - "ADR-019: add LinkRepository.findExistingCodes(Collection<String>) — one parameterized SELECT ... WHERE code IN (:codes) replacing N per-item existsByCode SELECTs."
+  - "ADR-020: in-memory generated-code assignment for no-alias items, checked against the consolidated existing-code set + in-batch seen-set, no per-item existence round trip."
+  - "ADR-021: transactional per-item fallback on DataIntegrityViolationException (rare Pass1->Pass2 race) so every still-valid item persists — preserves REQ-023."
+  - "High-impact critical_design durably approved by human (verbatim: 'Confirm')."
+  - "Branch: needs_decomposition -> unit-decomposition (only DAG-valid path; implementation depends_on unit-decomposition AND plan). Backend-only: UNIT-001 impacted, UNIT-002 untouched."
+approvals:
+  - by: human
+    decision: approved
+    verbatim: "Confirm"
+    scope: "architecture-design Phase 3 (ADR-017..ADR-021), critical_design — durable"
+    record: sdlc-docs/approvals/run-20260802T170000Z/architecture-design/architecture-design-approval.yaml
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/architecture-design/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/architecture-design/exit-evidence.md
+validation_evidence:
+  - "Template compliance: architecture-design-template.md required sections present (Phase 3 §10 additive)."
+  - "Security-standard: consolidated existence query and batch insert use parameterized JPA binding (IN (:codes) + entity persistence) — no SQL string concatenation (OWASP A05). Surface unchanged; 100-item cap + N-token limit still bound the batch."
+  - "Coding-standard: change confined to service/repository/entity + config; layered structure preserved."
+  - "Durable high-impact approval record present (approval-check OK)."
+open_questions: []
+risks:
+  - id: RISK-021
+    severity: low
+    description: "Moving uniqueness checks off the per-item DB round trip creates a Pass1->Pass2 TOCTOU window. Mitigated by the transactional per-item fallback on DataIntegrityViolationException (ADR-021), preserving best-effort partial success (REQ-023)."
+    status: mitigated
+  - id: RISK-023
+    severity: low
+    description: "hibernate.jdbc.batch_size and the IDENTITY->SEQUENCE id-strategy switch are GLOBAL and affect single-create/redirect writes too. Mitigated by keeping behavior identical and verifying the full backend suite (single-create, redirect, expiry) still passes."
+    status: mitigated
+  - id: RISK-024
+    severity: low
+    description: "In-memory per-instance rate limiter (RISK-004/014) unchanged; optimization is orthogonal to horizontal scaling."
+    status: accepted
+compensating_actions: []
+branch_decision: needs_decomposition
+next_ready_nodes: [unit-decomposition]
+context_summary: >
+  Phase 3 architecture approved (critical_design, human 'Confirm'). The bulk-creation write path is
+  redesigned as a two-pass algorithm behind the unchanged public contract: Pass 1 validates each item,
+  assigns its code, and resolves uniqueness in memory using ONE consolidated existence query
+  (findExistingCodes, ADR-019) plus an in-batch seen-set — invalid/duplicate items become per-item
+  errors with identical error codes; Pass 2 persists the known-valid entities via saveAll under a
+  single transaction so Hibernate JDBC batching applies (ADR-017). JDBC batching is enabled in
+  application.yml (human-approved, REQ-025) and requires the ShortLink id strategy to move from
+  IDENTITY to SEQUENCE, since IDENTITY disables insert batching (ADR-018). A transactional per-item
+  fallback on the rare DataIntegrityViolationException preserves best-effort partial success under the
+  Pass1->Pass2 race (ADR-021). Net: ~2N statements -> one existence query + ceil(N/batch_size) batched
+  inserts, proven by a Hibernate Statistics regression test (REQ-024). Backend-only: impacts UNIT-001
+  (LinkService, LinkRepository, ShortLink, application.yml); UNIT-002 untouched. Branch =>
+  needs_decomposition (the only DAG-valid path, since implementation depends_on unit-decomposition and
+  the mandatory plan node). Next: unit-decomposition (lightweight — reaffirm UNIT-001 scope for Phase 3).

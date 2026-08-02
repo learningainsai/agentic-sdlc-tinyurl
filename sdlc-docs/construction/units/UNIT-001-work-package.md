@@ -55,3 +55,50 @@ redirect via short code, input validation, per-IP rate limiting, and a uniform e
 
 - UNIT-001 ↔ REQ-001/002/003/004/005/006/008/009/010 ↔ ADR-001/003/004/005/006/007/008/009 ↔
   PLAN-001 ↔ TEST-001..007 ↔ DOC-001 ↔ CR-001.
+
+---
+
+## Phase 3 addendum — bulk-creation DB-query optimization (run-20260802T170000Z)
+
+- **status**: pending
+- **high_impact**: true (performance change touching id-generation strategy + JDBC batching)
+
+### Objective (Phase 3)
+
+Reduce the per-request database round trips of `POST /api/links/bulk` from ~2·N statements
+(one existence `SELECT` + one `INSERT` per item, driven by the `createOne` loop) to a bounded,
+batched pattern, **without changing the public API contract or the best-effort partial-success
+semantics**.
+
+### Inputs (Phase 3)
+
+- Requirements: REQ-021, REQ-022, REQ-023, REQ-024, REQ-025
+- Design refs: ADR-017, ADR-018, ADR-019, ADR-020, ADR-021
+
+### Target files (Phase 3)
+
+- `service/LinkService.java` — two-pass `createBulk` (ADR-017, ADR-020, ADR-021)
+- `repository/LinkRepository.java` — `findExistingCodes(Collection<String>)` (ADR-019)
+- `entity/ShortLink.java` — id generation IDENTITY → SEQUENCE (pooled) to enable insert batching (ADR-018)
+- `resources/application.yml` — Hibernate JDBC batching (`batch_size`, `order_inserts`) — **approved via REQ-025**
+
+### Execution loop checklist (Phase 3)
+
+- [ ] functional design confirmed (two-pass algorithm, ADR-017)
+- [ ] code generation plan (PLAN-001 Phase 3 section)
+- [ ] implementation (LinkService, LinkRepository, ShortLink, application.yml)
+- [ ] unit-level tests: bulk statement-count regression via Hibernate `Statistics` (REQ-024)
+- [ ] contract-preservation tests (REQ-022) + partial-success preservation tests (REQ-023)
+- [ ] unit code review (CR — Phase 3) + security review (no new attack surface)
+- [ ] unit handoff
+
+### Expected tests (Phase 3)
+
+- Statement/round-trip-count regression: bulk of N items issues ≤ constant + batched inserts
+  (asserted via `SessionFactory` `Statistics.getPrepareStatementCount()` / batching counters) — **REQ-024**
+- Response body for a mixed valid/duplicate/invalid batch is byte-for-byte identical to baseline — **REQ-022, REQ-023**
+
+### Traceability (Phase 3)
+
+- UNIT-001 (Phase 3) ↔ REQ-021/022/023/024/025 ↔ ADR-017/018/019/020/021 ↔ PLAN-001 (Phase 3)
+  ↔ Phase 3 tests ↔ DOC-003.

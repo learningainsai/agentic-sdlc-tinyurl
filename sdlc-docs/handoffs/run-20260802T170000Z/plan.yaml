@@ -1,0 +1,69 @@
+run_id: run-20260802T170000Z
+node_id: plan
+phase: inception
+from_agent: inception
+to_agents: [inception, construction]
+status: passed
+intake_id: INTAKE-20260802T170000Z-performance-improvement
+input_artifacts:
+  - sdlc-docs/inception/requirements/requirements.md
+  - sdlc-docs/inception/architecture-design/architecture-design.md
+  - sdlc-docs/construction/units/unit-registry.yaml
+  - sdlc-docs/handoffs/run-20260802T170000Z/unit-decomposition.yaml
+output_artifacts:
+  - sdlc-docs/inception/plan/project-plan.md
+  - sdlc-docs/inception/plan/issues-checklist.md
+  - sdlc-docs/inception/plan/test-strategy.md
+  - sdlc-docs/inception/plan/test-issues-checklist.md
+  - sdlc-docs/inception/plan/qa-plan.md
+template_ids:
+  - project-plan-template.md
+  - test-strategy-template.md
+standards_applied: []
+skills_used:
+  - breakdown-plan
+  - breakdown-test
+traceability_ids:
+  - EPIC-3
+  - FEAT-8
+  - US-020
+  - US-021
+  - EN-9
+  - EN-10
+  - EN-11
+  - TEST-019
+  - TEST-020
+  - PLAN-001
+decisions_made:
+  - "Phase 3 planned as a single epic EPIC-3 / feature FEAT-8 on UNIT-001; 2 stories (US-020/021) + 3 enablers (EN-9/10/11)."
+  - "EN-9 findExistingCodes batch lookup; EN-10 id IDENTITY→SEQUENCE + application.yml JDBC batching (human-approved via REQ-025); EN-11 two-pass createBulk + per-item transactional fallback."
+  - "Two Phase 3 tests: TEST-019 statement-count regression via Hibernate Statistics (REQ-021/024); TEST-020 contract + partial-success preservation (REQ-022/023)."
+  - "Critical path: EN-9 + EN-10 → EN-11 → US-020/021 → TEST-019/020. Single unit — no parallel unit work."
+approvals:
+  - by: human
+    decision: approved
+    verbatim: "Approve"
+    scope: "plan exit gate (Phase 3) — passing it unblocks construction (construction_unblocked → true)"
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/plan/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/plan/exit-evidence.md
+validation_evidence:
+  - "Template compliance: project-plan.md §11 and test-strategy.md §8 added; issues-checklist / test-issues-checklist / qa-plan Phase 3 sections added."
+  - "Every Phase 3 work item traces to REQ-021..025 / ADR-017..021 / UNIT-001 (project-plan §11.6)."
+  - "Test plan covers REQ-024 (bounded round trips) and REQ-022/023 (contract + partial success)."
+open_questions: []
+risks:
+  - "RISK-021 (medium, mitigated): batched-insert failure vs partial success — per-item fallback (EN-11/ADR-021)."
+  - "RISK-023 (medium, flagged): id IDENTITY→SEQUENCE global change — covered by full-suite regression + TEST-019/020; requires durable high-impact approval at implementation."
+compensating_actions: []
+next_ready_nodes: [implementation]
+context_summary: >
+  Phase 3 plan is complete and traceable. EPIC-3 (Bulk creation performance) / FEAT-8 (Batched bulk
+  persistence) decompose into US-020 (bounded DB round trips) and US-021 (behaviour/contract
+  unchanged), enabled by EN-9 (findExistingCodes batch lookup), EN-10 (ShortLink id IDENTITY→SEQUENCE
+  + application.yml Hibernate batching, human-approved via REQ-025), and EN-11 (two-pass createBulk +
+  transactional per-item fallback). Quality is validated by TEST-019 (Hibernate Statistics
+  statement-count regression) and TEST-020 (contract + partial-success preservation), plus a full
+  existing-suite regression for the id-generation change. Passing the plan exit gate flips the intake
+  construction_unblocked flag to true and readies the implementation node (UNIT-001, high_impact,
+  durable approval required). Next: implementation.

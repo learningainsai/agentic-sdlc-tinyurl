@@ -1,0 +1,74 @@
+run_id: run-20260802T170000Z
+node_id: requirements
+phase: inception
+from_agent: inception
+to_agents: [inception]
+status: passed
+intake_id: INTAKE-20260802T170000Z-performance-improvement
+input_artifacts: []
+output_artifacts:
+  - sdlc-docs/inception/requirements/idea-refinement.md
+  - sdlc-docs/inception/requirements/requirements.md
+template_ids:
+  - requirements-template.md
+standards_applied:
+  - documentation-standard
+traceability_ids:
+  - REQ-021
+  - REQ-022
+  - REQ-023
+  - REQ-024
+  - REQ-025
+decisions_made:
+  - "Scope narrowed by human to bulk-creation DB queries only (single-create, redirect, UI, schema untouched)."
+  - "Exit-gate approval (human, verbatim): 'Approve' — accepts defaults P1–P6."
+  - "P1: optimize only the bulk write path; single-create untouched."
+  - "P2: reduce statement count via consolidated existence checks + JDBC-batched inserts (saveAll + Hibernate batch settings). Baseline ~2N individual statements; target bounded existence queries + ~ceil(N/batch_size) insert round trips."
+  - "P3: public bulk request/response, ordering, and per-item error codes are frozen (REQ-022)."
+  - "P4: best-effort partial success preserved — valid items commit even if others fail (REQ-023)."
+  - "P5: no new library; Hibernate JDBC batching in application.yml APPROVED by human for this run (REQ-025)."
+  - "P6: acceptance is a measured regression test via Hibernate Statistics statement count (REQ-024)."
+  - "Q4 (load design point): optimize for large batches (up to the 100-item cap)."
+  - "Q5 (environment): PostgreSQL is the authoritative measurement target; H2 tests use the portable statement-count assertion."
+approvals:
+  - by: human
+    decision: approved
+    verbatim: "Approve"
+    scope: "requirements exit gate (Phase 3 REQ-021..REQ-025, defaults P1–P6; JDBC batching in application.yml authorized)"
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/requirements/exit-evidence.md
+validation_evidence:
+  - "Template compliance: requirements-template.md required sections present (Phase 3 §9 added additively)."
+  - "Required-skill: idea-refiner report present and references intake INTAKE-20260802T170000Z-performance-improvement."
+  - "Content validation: Phase 3 open questions resolved by recorded human decision 'Approve' (accept defaults P1–P6)."
+  - "Baseline grounded in code: LinkService.createBulk performs per-item existsByCode SELECT + non-batched INSERT (~2N statements)."
+open_questions: []
+risks:
+  - id: RISK-021
+    severity: low
+    description: "JDBC batch inserts can, on a constraint violation, roll back the whole batch — conflicting with best-effort partial success (REQ-023). Must be resolved in architecture-design (e.g., pre-validate + dedupe intra-batch aliases, then batch-insert the known-valid set, with a per-item fallback on integrity violation)."
+    status: open
+  - id: RISK-022
+    severity: low
+    description: "Generated-code path uses random codes; batching the existence pre-check helps the explicit-alias items and collision retries most. Net gain is dominated by JDBC-batched inserts on large batches."
+    status: accepted
+  - id: RISK-023
+    severity: low
+    description: "application.yml change (hibernate.jdbc.batch_size / order_inserts) is a global persistence setting affecting all writes, not just bulk. Human-approved for this run; verify no regression to single-create/redirect."
+    status: mitigated
+compensating_actions: []
+next_ready_nodes: [architecture-design]
+context_summary: >
+  Phase 3 requirements for the TinyURL shortener approved by the human ("Approve", accept defaults
+  P1–P6). Single measurable objective: reduce the database round trips of bulk creation
+  (POST /api/links/bulk) behind the unchanged public contract. Baseline measured from code:
+  LinkService.createBulk loops item-by-item doing an individual existsByCode SELECT plus a
+  non-batched INSERT (~2N statements for N items). Target: consolidate the existence checks and
+  enable JDBC-batched inserts (human authorized editing application.yml for Hibernate batch settings —
+  the one change AGENTS.md requires approval for). Five requirements REQ-021..REQ-025 with testable
+  acceptance: reduced statement count proven via Hibernate Statistics (REQ-024); API contract and
+  best-effort partial success preserved (REQ-022/023); no new library (REQ-025). Optimize for large
+  batches (up to 100). PostgreSQL is the authoritative measurement target. Backend-only change —
+  impacts UNIT-001 (LinkService.createBulk, LinkRepository, application.yml); UNIT-002 untouched.
+  Next: architecture-design (high-impact — requires durable human confirmation) to resolve RISK-021
+  (how batched inserts preserve best-effort partial success).

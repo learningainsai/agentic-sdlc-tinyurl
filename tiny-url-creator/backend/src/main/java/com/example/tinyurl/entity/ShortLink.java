@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
@@ -14,8 +15,13 @@ import java.time.Instant;
 @Table(name = "short_link")
 public class ShortLink {
 
+    // SEQUENCE (pooled) rather than IDENTITY so Hibernate can batch bulk inserts (ADR-018):
+    // IDENTITY forces a round trip per row and silently disables JDBC insert batching. The pooled
+    // allocationSize matches spring.jpa.properties.hibernate.jdbc.batch_size so one sequence fetch
+    // covers a whole batch.
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "short_link_seq")
+    @SequenceGenerator(name = "short_link_seq", sequenceName = "short_link_seq", allocationSize = 50)
     private Long id;
 
     @Column(nullable = false, unique = true, length = 30)

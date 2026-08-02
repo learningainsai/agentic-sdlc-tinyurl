@@ -1,0 +1,73 @@
+run_id: run-20260802T170000Z
+node_id: implementation
+phase: construction
+from_agent: construction
+to_agents: [construction]
+status: passed
+intake_id: INTAKE-20260802T170000Z-performance-improvement
+unit_id: UNIT-001
+input_artifacts:
+  - sdlc-docs/handoffs/run-20260802T170000Z/plan.yaml
+  - sdlc-docs/construction/units/UNIT-001-work-package.md
+  - sdlc-docs/inception/architecture-design/architecture-design.md
+output_artifacts:
+  - tiny-url-creator/backend/src/main/java/com/example/tinyurl/service/LinkService.java
+  - tiny-url-creator/backend/src/main/java/com/example/tinyurl/repository/LinkRepository.java
+  - tiny-url-creator/backend/src/main/java/com/example/tinyurl/entity/ShortLink.java
+  - tiny-url-creator/backend/src/main/resources/application.yml
+  - tiny-url-creator/backend/src/test/resources/application-test.yml
+  - tiny-url-creator/backend/src/test/java/com/example/tinyurl/service/LinkServiceTest.java
+  - tiny-url-creator/backend/src/test/java/com/example/tinyurl/BulkPersistenceIT.java
+template_ids: []
+standards_applied: []
+traceability_ids:
+  - REQ-021
+  - REQ-022
+  - REQ-023
+  - REQ-024
+  - REQ-025
+  - ADR-017
+  - ADR-018
+  - ADR-019
+  - ADR-020
+  - ADR-021
+  - EN-9
+  - EN-10
+  - EN-11
+  - TEST-019
+  - TEST-020
+approvals:
+  - by: human
+    decision: approved
+    verbatim: "Confirm"
+    scope: "implementation high-impact durable approval (id-generation IDENTITY→SEQUENCE + JDBC batching); record: sdlc-docs/approvals/run-20260802T170000Z/implementation/implementation-high-impact.yaml"
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/implementation/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/implementation/exit-evidence.md
+validation_evidence:
+  - "./mvnw -o verify → BUILD SUCCESS: 31 unit (Surefire) + 5 IT (Failsafe: 3 LinkFlowIT + 2 BulkPersistenceIT), 0 failures/errors."
+  - "TEST-019: 50-item bulk issues ≤10 prepared statements via Hibernate Statistics (baseline ~2N=100) — REQ-021/024 met; batching engaged (SEQUENCE id + batch_size:50 + order_inserts)."
+  - "TEST-020: mixed batch (valid / INVALID_URL / created / intra-batch ALIAS_TAKEN / persisted ALIAS_TAKEN) yields identical ordered per-item results — REQ-022/023 met."
+  - "Existing bulk unit tests TEST-013..016 updated to the batched interaction (findExistingCodes + saveAll); response assertions unchanged."
+decisions_made:
+  - "EN-11: two-pass createBulk — Pass 1 in-memory validation + code assignment (intra-batch uniqueness via a HashSet); Pass 2 one findExistingCodes SELECT + a single saveAll batched insert."
+  - "EN-9: LinkRepository.findExistingCodes(Collection) as a @Query projection SELECT s.code ... WHERE s.code IN :codes."
+  - "EN-10: ShortLink id IDENTITY→SEQUENCE pooled (allocationSize 50 matching batch_size); application.yml jdbc.batch_size:50 + order_inserts/order_updates."
+  - "ADR-021 fallback: on DataIntegrityViolationException from the batched saveAll, retry each survivor via the per-item createOne path so best-effort partial success is preserved."
+  - "Rare generated-code clash with a persisted row falls back to per-item createOne (retries a fresh code) — preserves ADR-004/RISK-003 behaviour."
+open_questions: []
+risks:
+  - "RISK-023: prod runs spring.jpa.hibernate.ddl-auto=validate with no migration tooling in-repo; the short_link_seq sequence must exist in the prod schema before deploy. Dev (update) and test (create-drop) create it automatically. Flag at release-readiness."
+compensating_actions: []
+next_ready_nodes: [testing, documentation, code-review]
+context_summary: >
+  Phase 3 backend optimization implemented on UNIT-001 and verified green. createBulk is now a
+  two-pass batched algorithm: it validates and assigns codes in memory (custom aliases plus generated
+  codes kept unique within the batch), resolves all collisions with persisted rows via a single
+  findExistingCodes SELECT (ADR-019), and inserts survivors with one batched saveAll; a per-item
+  transactional fallback on DataIntegrityViolationException preserves best-effort partial success
+  (ADR-021). ShortLink switched from IDENTITY to a pooled SEQUENCE (ADR-018) and application.yml
+  enables Hibernate JDBC batching, so a 50-item batch now issues ≤10 prepared statements instead of
+  ~100 (TEST-019). The response contract is byte-for-byte unchanged across all input classes
+  (TEST-020) and the full existing suite stays green. One deploy caveat (RISK-023): prod schema must
+  provide short_link_seq. Next: testing / documentation / code-review, then release-readiness.

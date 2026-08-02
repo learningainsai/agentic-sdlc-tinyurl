@@ -2,28 +2,38 @@
 # Produced by the `unit-decomposition` node; consumed by `implementation` for parallel scheduling.
 # Schema: .github/sdlc/schemas/unit-registry.schema.md
 #
-# Active run is Phase 2 (expiry column + bulk creation). Phase 1 scope was delivered by
-# run-20260801T232309Z (retained in phase1_* fields for traceability). The `status`,
-# `requirements` and `expected_tests` below describe the CURRENT (Phase 2) work to be built.
+# Active run is Phase 3 (bulk-creation DB-query optimization). Phase 1/2 scope was delivered by
+# run-20260801T232309Z / run-20260802T150051Z (retained in phaseN_* fields for traceability). The
+# `status`, `requirements` and `expected_tests` below describe the CURRENT (Phase 3) work to be built.
+# Phase 3 is BACKEND-ONLY: only UNIT-001 is in scope; UNIT-002 has no Phase 3 work (phase3_in_scope: false).
 
-run_id: run-20260802T150051Z
+run_id: run-20260802T170000Z
 generated_by: unit-decomposition
-intake_id: INTAKE-20260802T150051Z-expiry-and-bulk-creation
+intake_id: INTAKE-20260802T170000Z-performance-improvement
 units:
   - unit_id: UNIT-001
-    name: Backend URL-shortener API — expiry + bulk
-    phase: 2
+    name: Backend URL-shortener API — bulk DB-query optimization
+    phase: 3
     owner_agent: construction
     depends_on_units: []
-    requirements: [REQ-011, REQ-012, REQ-013, REQ-014, REQ-015, REQ-016, REQ-017, REQ-018, REQ-019]
-    design_refs: [ADR-010, ADR-011, ADR-012, ADR-013, ADR-014, ADR-015]
-    target_files: ["tiny-url-creator/backend/**"]
-    expected_tests: [TEST-010, TEST-011, TEST-012, TEST-013, TEST-014, TEST-015, TEST-016]
+    requirements: [REQ-021, REQ-022, REQ-023, REQ-024, REQ-025]
+    design_refs: [ADR-017, ADR-018, ADR-019, ADR-020, ADR-021]
+    target_files:
+      - "tiny-url-creator/backend/src/main/java/com/example/tinyurl/service/LinkService.java"
+      - "tiny-url-creator/backend/src/main/java/com/example/tinyurl/repository/LinkRepository.java"
+      - "tiny-url-creator/backend/src/main/java/com/example/tinyurl/entity/ShortLink.java"
+      - "tiny-url-creator/backend/src/main/resources/application.yml"
+      - "tiny-url-creator/backend/src/test/**"
+    expected_tests: ["(assigned at plan) bulk statement-count regression test (REQ-024)"]
     documentation_refs: [DOC-003]
     risk_level: medium
-    high_impact: false
+    high_impact: true
     status: passed
     plan_ref: PLAN-001
+    phase3_in_scope: true
+    phase3_test_evidence: "run-20260802T170000Z: ./mvnw -o verify BUILD SUCCESS; 31 unit + 5 IT (incl. TEST-019 ≤10 stmts/50-item bulk, TEST-020 contract preserved)"
+    phase2_status: passed
+    phase2_requirements: [REQ-011, REQ-012, REQ-013, REQ-014, REQ-015, REQ-016, REQ-017, REQ-018, REQ-019]
     phase2_test_evidence: "run-20260802T150051Z: ./mvnw -o verify 31 unit/slice + 3 IT (LinkFlowIT) passed; BUILD SUCCESS"
     phase1_status: passed
     phase1_requirements: [REQ-001, REQ-002, REQ-003, REQ-004, REQ-005, REQ-006, REQ-008, REQ-009, REQ-010]
@@ -42,6 +52,7 @@ units:
     high_impact: false
     status: passed
     plan_ref: PLAN-002
+    phase3_in_scope: false
     phase2_test_evidence: "run-20260802T150051Z: ng build complete; ng test --watch=false 9 specs passed (ChromeHeadlessCI)"
     phase1_status: passed
     phase1_requirements: [REQ-007]

@@ -3,14 +3,14 @@
 # Requirements — TinyURL URL Shortener
 
 - **template_id**: requirements-template.md
-- **run_id**: run-20260801T232309Z (Phase 1, approved) · run-20260802T150051Z (Phase 2, in review)
+- **run_id**: run-20260801T232309Z (Phase 1, approved) · run-20260802T150051Z (Phase 2, approved) · run-20260802T170000Z (Phase 3, in draft)
 - **node_id**: requirements
 - **authored_by**: inception
-- **status**: Phase 1 approved · Phase 2 (§8) pending exit-gate approval
+- **status**: Phase 1 approved · Phase 2 approved · Phase 3 (§9) pending exit-gate approval
 
-> This is a cumulative requirements document. **Phase 1 (REQ-001..REQ-010)** below is approved and
-> implemented. **Phase 2 (REQ-011..REQ-020)** in §8 adds an optional expiry column and bulk creation
-> (intake INTAKE-20260802T150051Z-expiry-and-bulk-creation).
+> This is a cumulative requirements document. **Phase 1 (REQ-001..REQ-010)** and **Phase 2
+> (REQ-011..REQ-020)** are approved and implemented. **Phase 3 (REQ-021..REQ-025)** in §9 optimizes
+> the database write pattern of bulk creation (intake INTAKE-20260802T170000Z-performance-improvement).
 
 ## 1. Context (required)
 
@@ -191,3 +191,89 @@ remain. See `idea-refinement.md` Phase 2 section for the mapping of each default
 - Downstream: to be linked to ADR- (architecture-design Phase 2) and UNIT- (unit-decomposition).
 - Existing units likely impacted: UNIT-001 (backend API) for REQ-011..REQ-019; UNIT-002 (frontend) for
   REQ-020.
+
+---
+
+## 9. Phase 3 — Bulk creation database-query optimization (run-20260802T170000Z)
+
+**Intake**: INTAKE-20260802T170000Z-performance-improvement · **Source**: user request _"I want to
+improve performance"_, narrowed by the human to _"the simple piece of updating the bulk urls on db
+queries"_ · **Critique**: `idea-refinement.md` Phase 3 section.
+
+### 9.1 Problem baseline (measured from current code)
+
+The bulk path (`LinkService.createBulk`) processes items **one at a time**, and each item performs an
+individual `existsByCode` **SELECT** followed by an individual, **non-batched** `save` **INSERT**. For
+a batch of N new items this is roughly **2N separate DB statements** with no JDBC batching. This is the
+inefficiency this run targets. The public bulk API contract and its best-effort semantics (REQ-015..
+REQ-019) are **not** changing — only the persistence access pattern behind them.
+
+### 9.2 Scope
+
+- **In scope**: reduce the number of database round trips / statements incurred by
+  `POST /api/links/bulk` for a batch of N items, behind the existing contract.
+- **Out of scope**: any change to the single-create path (`POST /api/links`), the redirect path, the
+  request/response schema, the 100-item cap, the N-token rate limiting, the frontend, and the data
+  model (no new columns/tables). No caching layer, no async/queueing, no new third-party library.
+
+### 9.3 Functional / quality requirements
+
+| ID | Requirement | Priority | Acceptance criteria | Decision |
+|----|-------------|----------|---------------------|----------|
+| REQ-021 | Reduce bulk DB round trips | must | Given a bulk request of N valid new items, when processed, then the total number of DB statements is materially lower than the current per-item baseline (~2N individual statements): existence checks are consolidated and inserts are JDBC-batched, so insert round trips are ~⌈N/batch_size⌉ rather than N. | P1, P2 |
+| REQ-022 | Preserve the bulk API contract | must | Given the same bulk request, when processed by the optimized path, then the HTTP response (ordered per-item results, success fields, and per-item error codes) is byte-for-byte equivalent to the current behavior for every mix of valid/invalid/duplicate items (REQ-015/016/017/018 still hold). | P3 |
+| REQ-023 | Preserve best-effort partial success | must | Given a batch containing both valid and invalid items (bad URL, past expiry, taken/intra-batch-duplicate alias), when processed, then all valid items are persisted and each invalid item reports its per-item error; one failing item must not roll back or drop any valid item. | P4 |
+| REQ-024 | Prove the improvement with a regression test | must | Given a representative batch, when executed under test, then a test asserts the reduced DB statement/round-trip count (e.g., via Hibernate `Statistics`) against the documented baseline, and fails if the per-item pattern regresses. | P6 |
+| REQ-025 | Stay within stack + config guardrails | must | Given `AGENTS.md`, when implementing, then no new third-party library is added; enabling Hibernate JDBC batching in `application.yml` (`spring.jpa.properties.hibernate.jdbc.batch_size`, `order_inserts`) requires explicit human approval before that config is changed. | P5 |
+
+### 9.4 Non-functional requirements (Phase 3)
+
+- **Performance**: fewer DB round trips for bulk; wall-clock bulk-create latency should improve or hold
+  under a representative batch (e.g., 100 items) on the authoritative datastore. No regression to the
+  redirect or single-create hot paths.
+- **Correctness/consistency**: identical externally-observable results to today (REQ-022/023); the
+  optimization is purely an internal access-pattern change.
+- **Security** (security-standard): unchanged surface — the 100-item cap and N-token rate limit still
+  bound the batch; each item is still fully validated. No new inputs, endpoints, or data exposure.
+- **Compatibility**: no schema change; no API change; backward compatible.
+
+### 9.5 Assumptions & constraints — proposed defaults (P1–P6)
+
+Recommended defaults, adopted **pending exit-gate confirmation** (they answer the still-open
+`idea-refinement.md` Phase 3 questions):
+
+- **P1** (Q1 scope): optimize **only** the bulk write path; single-create is untouched.
+- **P2** (Q2 target): reduce statement count via (a) **consolidated existence checks** (batch lookup of
+  the batch's explicit aliases instead of one `existsByCode` per item) and (b) **JDBC-batched inserts**
+  (`saveAll` + Hibernate batch settings). Baseline = ~2N individual statements; target = a bounded
+  number of existence queries + ~⌈N/batch_size⌉ insert round trips.
+- **P3** (contract): the public bulk request/response, ordering, and per-item error codes are **frozen**.
+- **P4** (semantics): **best-effort partial success is preserved** — valid items still commit even if
+  others fail; failures are isolated per item.
+- **P5** (Q6 guardrails): **no new library**. New repository query method(s) are allowed. Enabling
+  Hibernate JDBC batching in `application.yml` is **flagged as requiring explicit approval** (AGENTS.md).
+- **P6** (Q7 acceptance): a **measured regression test** (Hibernate `Statistics` statement count) is
+  the acceptance gate, not best-effort tuning.
+
+- **Environment note** (Q5): the authoritative measurement target is **PostgreSQL** (JDBC batching
+  behavior differs from H2); tests may run on H2 but the statement-count assertion is the portable gate.
+
+### 9.6 Open questions (Phase 3)
+
+Proposed defaults P1–P6 above resolve `idea-refinement.md` Q1, Q2, Q5, Q6, Q7. The following still
+want an explicit human decision at the exit gate:
+
+1. **(Q6 / P5, REQ-025)** Do you approve changing `application.yml` to enable Hibernate JDBC batching
+   (`hibernate.jdbc.batch_size`, `order_inserts`)? If **no**, the optimization is limited to
+   consolidating the existence-check SELECTs (still a real reduction, but inserts stay per-row).
+2. **(Q4 load profile)** Is optimizing for a **full 100-item batch** the right design point, or do you
+   expect typically small batches (then the win is mostly the batched inserts on large batches)?
+
+### 9.7 Traceability (Phase 3)
+
+- Requirement IDs defined here: REQ-021..REQ-025.
+- Upstream: user request (performance → bulk DB queries) + `idea-refinement.md` (run-20260802T170000Z)
+  + defaults P1–P6.
+- Downstream: to be linked to ADR- (architecture-design Phase 3) and UNIT- (unit-decomposition).
+- Unit likely impacted: **UNIT-001** (backend) only — `LinkService.createBulk`, `LinkRepository`, and
+  (pending Q1 approval) `application.yml`. No frontend change (UNIT-002 untouched).

@@ -8,6 +8,15 @@ spring:
     active: dev
   jpa:
     open-in-view: false
+    properties:
+      hibernate:
+        # Batch bulk inserts into one JDBC round trip (ADR-018/REQ-025). order_inserts groups
+        # same-table statements so they actually batch; batch_size matches the ShortLink pooled
+        # sequence allocationSize.
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
 
 # Application configuration (see AppProperties). Prefixed with 'app'.
 app:

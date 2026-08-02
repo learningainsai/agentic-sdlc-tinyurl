@@ -1,0 +1,50 @@
+run_id: run-20260802T170000Z
+node_id: unit-decomposition
+phase: inception
+from_agent: inception
+to_agents: [inception, construction]
+status: passed
+intake_id: INTAKE-20260802T170000Z-performance-improvement
+input_artifacts:
+  - sdlc-docs/inception/architecture-design/architecture-design.md
+  - sdlc-docs/handoffs/run-20260802T170000Z/architecture-design.yaml
+output_artifacts:
+  - sdlc-docs/construction/units/unit-registry.yaml
+  - sdlc-docs/construction/units/UNIT-001-work-package.md
+  - sdlc-docs/inception/unit-decomposition/unit-decomposition.md
+template_ids:
+  - unit-decomposition-template.md
+  - work-package-template.md
+standards_applied: []
+traceability_ids:
+  - UNIT-001
+decisions_made:
+  - "Phase 3 is backend-only; all work maps onto the existing UNIT-001. No new units, no dependency edges."
+  - "UNIT-002 is out of scope for Phase 3 (phase3_in_scope: false) because the public API contract is preserved byte-for-byte (REQ-022)."
+  - "UNIT-001 (Phase 3): REQ-021..025, ADR-017..021 — two-pass createBulk, findExistingCodes batch lookup, ShortLink id IDENTITY→SEQUENCE, Hibernate JDBC batching, per-item transactional fallback."
+  - "UNIT-001 marked high_impact: true for Phase 3 (id-generation strategy change + JDBC batching have global blast radius)."
+approvals:
+  - by: human
+    decision: approved
+    verbatim: "Approve"
+    scope: "unit-decomposition exit gate (Phase 3 UNIT-001 scope)"
+policy_evidence:
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/unit-decomposition/entry-evidence.md
+  - sdlc-docs/policy-evidence/run-20260802T170000Z/unit-decomposition/exit-evidence.md
+validation_evidence:
+  - "Template compliance: unit-decomposition-template.md (§8 added) + work-package-template.md (UNIT-001 Phase 3 addendum) present."
+  - "Conflict rule: single active unit (UNIT-001); no target_file overlap possible."
+  - "UNIT-001 declares Phase 3 tests (statement-count regression REQ-024; contract + partial-success preservation REQ-022/023)."
+open_questions: []
+risks:
+  - "RISK-023 (from architecture): ShortLink id IDENTITY→SEQUENCE is a global change; mitigated by keeping code-generation behaviour identical and covered by existing + Phase 3 tests."
+compensating_actions: []
+next_ready_nodes: [plan]
+context_summary: >
+  Phase 3 decomposition: the bulk DB-query optimization is entirely backend and maps onto the
+  existing UNIT-001 (REQ-021..025 / ADR-017..021). It covers the two-pass createBulk rewrite
+  (in-memory validation + code assignment + a single consolidated findExistingCodes SELECT, then a
+  batched saveAll), the ShortLink id-generation switch to SEQUENCE to unlock Hibernate insert
+  batching, the application.yml batching settings (human-approved via REQ-025), and a transactional
+  per-item fallback that preserves best-effort partial success. UNIT-002 (frontend) has no Phase 3
+  work because the API contract is unchanged. Next: plan (mandatory before construction).

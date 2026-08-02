@@ -3,10 +3,10 @@
 # Unit Decomposition — TinyURL URL Shortener
 
 - **template_id**: unit-decomposition-template.md
-- **run_id**: run-20260801T232309Z (Phase 1, approved) · run-20260802T150051Z (Phase 2, in review)
+- **run_id**: run-20260801T232309Z (Phase 1, approved) · run-20260802T150051Z (Phase 2, approved) · run-20260802T170000Z (Phase 3, in review)
 - **node_id**: unit-decomposition
 - **registry_output**: sdlc-docs/construction/units/unit-registry.yaml
-- **status**: Phase 1 approved · Phase 2 (§7) pending exit-gate approval
+- **status**: Phase 1 approved · Phase 2 approved · Phase 3 (§8) pending exit-gate approval
 
 ## 1. Decomposition rationale (required)
 
@@ -100,3 +100,47 @@ Acyclic; no edges (both independent). ✔
 ### 7.6 Open questions (Phase 2)
 
 N/A — scope fixed by approved Phase 2 requirements + architecture (defaults D1–D9 confirmed).
+
+## 8. Phase 3 — Bulk-creation DB-query optimization (run-20260802T170000Z)
+
+### 8.1 Rationale
+
+Phase 3 (ADR-017..ADR-021) is a **backend-only performance change** to the existing bulk endpoint.
+All work — the two-pass `createBulk` rewrite, the `findExistingCodes` batch lookup, the id-generation
+switch (IDENTITY→SEQUENCE) that enables Hibernate insert batching, the `application.yml` batching
+settings, and the transactional per-item fallback — lives inside **UNIT-001**. There is **no frontend
+work**: the public API contract is preserved byte-for-byte (REQ-022), so **UNIT-002 is out of scope**
+(`phase3_in_scope: false`). No new units, no new dependency edges.
+
+### 8.2 Units (Phase 3 scope)
+
+| UNIT id | Phase 3 scope | Depends on | Target files | Requirements | Risk | High-impact |
+|---------|---------------|-----------|--------------|--------------|------|-------------|
+| UNIT-001 | two-pass `createBulk`; `findExistingCodes(Collection)`; ShortLink id IDENTITY→SEQUENCE; Hibernate JDBC batching; per-item fallback | — | `service/LinkService.java`, `repository/LinkRepository.java`, `entity/ShortLink.java`, `resources/application.yml`, `src/test/**` | REQ-021..025 | medium | **true** |
+| UNIT-002 | — (no Phase 3 work; API contract unchanged) | — | — | — | — | false |
+
+### 8.3 Parallelization & conflict check
+
+- Single active unit (UNIT-001) → no cross-unit target-file overlap possible; scheduling is trivially
+  serial for this phase.
+- UNIT-001 declares a Phase 3 statement-count regression test (REQ-024) plus contract- and
+  partial-success-preservation tests (REQ-022, REQ-023), satisfying the `missing_required_tests` guard.
+
+### 8.4 Dependency graph (Phase 3)
+
+```mermaid
+flowchart LR
+  U1[UNIT-001 Backend: bulk DB-query optimization]
+```
+
+Acyclic; single node. ✔
+
+### 8.5 Traceability (Phase 3)
+
+- UNIT-001 → REQ-021/022/023/024/025 ; ADR-017/018/019/020/021.
+- Upstream handoff: sdlc-docs/handoffs/run-20260802T170000Z/architecture-design.yaml.
+
+### 8.6 Open questions (Phase 3)
+
+N/A — scope fixed by approved Phase 3 requirements + architecture (defaults P1–P6 confirmed; the
+application.yml + id-generation changes were flagged in REQ-025 / ADR-018 and human-approved).

@@ -1,0 +1,27 @@
+run_id: run-20260802T170000Z
+node_id: implementation
+action_id: implementation-high-impact
+unit_id: UNIT-001
+classification: critical-design
+high_impact: true
+decision: approved
+by: human
+raw_user_response: "Confirm"
+timestamp: 2026-08-02T17:48:00Z
+scope: >
+  Authorizes the Phase 3 high-impact backend implementation on UNIT-001: rewrite createBulk to a
+  two-pass batched algorithm (ADR-017/020/021), add LinkRepository.findExistingCodes (ADR-019),
+  change ShortLink id-generation IDENTITY→SEQUENCE pooled (ADR-018, RISK-023), enable Hibernate JDBC
+  batching in application.yml (REQ-025), and add TEST-019 (statement-count regression) + TEST-020
+  (contract + partial-success preservation).
+files_authorized:
+  - tiny-url-creator/backend/src/main/java/com/example/tinyurl/service/LinkService.java
+  - tiny-url-creator/backend/src/main/java/com/example/tinyurl/repository/LinkRepository.java
+  - tiny-url-creator/backend/src/main/java/com/example/tinyurl/entity/ShortLink.java
+  - tiny-url-creator/backend/src/main/resources/application.yml
+  - tiny-url-creator/backend/src/test/**
+risks_acknowledged:
+  - "RISK-023: id IDENTITY→SEQUENCE is a global id-generation change; mitigated by identical code-generation behaviour + full-suite regression + TEST-019/020."
+  - "RISK-021: batched-insert failure vs best-effort partial success; mitigated by per-item transactional fallback (ADR-021)."
+requirements: [REQ-021, REQ-022, REQ-023, REQ-024, REQ-025]
+design_refs: [ADR-017, ADR-018, ADR-019, ADR-020, ADR-021]

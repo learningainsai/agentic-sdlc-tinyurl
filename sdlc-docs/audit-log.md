@@ -977,3 +977,467 @@ INTAKE-20260802T150051Z-expiry-and-bulk-creation construction_unblocked set true
 - **Result**: passed
 ---
 
+## intake:performance-improvement
+- **Timestamp**: 2026-08-02T17:00:00Z
+- **Event**: new-work-routed-to-inception
+- **Actor**: orchestrator
+- **Detail**: New idea "I want to improve performance" recorded as INTAKE-20260802T170000Z-performance-improvement (construction_unblocked: false). Untestable/unscoped as written. Routed through mandatory inception front door at requirements node; idea-refiner auto-invoked. Not folded into completed run-20260802T150051Z — a fresh run pending human re-plan decision (S5). No tiny-url-creator/ edits until this intake clears the plan gate.
+- **Result**: block
+---
+
+## gate:requirements
+- **Timestamp**: 2026-08-02T17:00:05Z
+- **Event**: skill-invoked
+- **Actor**: inception
+- **Detail**: idea-refiner auto-invoked for INTAKE-20260802T170000Z. Verdict: NOT READY — request has no target component, metric, baseline, or acceptance threshold. Open questions posted to human; requirements.md drafting blocked until answered.
+- **Result**: blocked-awaiting-human
+---
+
+## requirements
+- **Timestamp**: 2026-08-02T17:05:00Z
+- **Event**: artifacts-drafted
+- **Actor**: inception
+- **Detail**: Human narrowed scope to bulk-creation DB queries. requirements.md §9 drafted for run-20260802T170000Z (REQ-021..REQ-025, defaults P1-P6). Baseline grounded in code: LinkService.createBulk does ~2N individual statements (per-item existsByCode SELECT + non-batched INSERT). Two open questions remain (application.yml JDBC batching approval; load design point). Awaiting human exit-gate approval before architecture-design.
+- **Result**: awaiting-approval
+---
+
+## requirements
+- **Timestamp**: 2026-08-02T17:08:00Z
+- **Event**: human-approval
+- **Actor**: user
+- **Detail**: Requirements exit-gate approval recorded (verbatim): 'Approve'. Accepts defaults P1-P6. JDBC batching in application.yml AUTHORIZED (REQ-025 / AGENTS.md). Load design point: large batches (up to 100). Environment: PostgreSQL authoritative.
+- **Result**: approved
+---
+
+## gate:requirements
+- **Timestamp**: 2026-08-02T17:08:05Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/requirements/exit-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:08:10Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid (sdlc-docs/handoffs/run-20260802T170000Z/requirements.yaml)
+- **Result**: valid
+---
+
+## gate:requirements
+- **Timestamp**: 2026-08-02T17:08:12Z
+- **Event**: gate-exit
+- **Actor**: orchestrator
+- **Detail**: Requirements exit gate PASSED for run-20260802T170000Z. REQ-021..REQ-025 (bulk DB-query optimization). Handoff written + validated. Next ready node: architecture-design (high-impact — durable confirmation required).
+- **Result**: pass
+---
+
+## architecture-design
+- **Timestamp**: 2026-08-02T17:12:00Z
+- **Event**: artifacts-drafted
+- **Actor**: inception
+- **Detail**: architecture-design.md §10 drafted (ADR-017..ADR-021) for run-20260802T170000Z, traced to REQ-021..REQ-025. Two-pass bulk algorithm (consolidated existence query + JDBC-batched inserts) with transactional per-item fallback to preserve best-effort partial success (RISK-021). Requires application.yml batch settings + ShortLink id strategy IDENTITY->SEQUENCE (ADR-018). Classified high-impact: critical_design. STOP — awaiting durable human confirmation before entry/exit gates.
+- **Result**: awaiting-approval
+---
+
+## gate:requirements
+- **Timestamp**: 2026-08-02T17:16:14Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/requirements/exit-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:16:45Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## approval:architecture-design
+- **Timestamp**: 2026-08-02T17:20:04Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approved via /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T170000Z/architecture-design/architecture-design-approval.yaml
+- **Result**: approved
+---
+
+## approval:architecture-design
+- **Timestamp**: 2026-08-02T17:20:04Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approved via /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T170000Z/architecture-design/architecture-design-approval.yaml
+- **Result**: approved
+---
+
+## gate:architecture-design
+- **Timestamp**: 2026-08-02T17:20:04Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/architecture-design/entry-evidence.md
+- **Result**: pass
+---
+
+## approval:architecture-design
+- **Timestamp**: 2026-08-02T17:20:04Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approved via /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T170000Z/architecture-design/architecture-design-approval.yaml
+- **Result**: approved
+---
+
+## gate:architecture-design
+- **Timestamp**: 2026-08-02T17:20:04Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/architecture-design/exit-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:20:56Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## approval:architecture-design
+- **Timestamp**: 2026-08-02T17:21:13Z
+- **Event**: high-impact-approval
+- **Actor**: orchestrator
+- **Detail**: Durable critical_design approval recorded (run-20260802T170000Z). User verbatim: 'Confirm'. Record: sdlc-docs/approvals/run-20260802T170000Z/architecture-design/architecture-design-approval.yaml (ADR-017..ADR-021).
+- **Result**: approved
+---
+
+## architecture-design
+- **Timestamp**: 2026-08-02T17:21:13Z
+- **Event**: branch-decision
+- **Actor**: orchestrator
+- **Detail**: Branch => needs_decomposition (only DAG-valid path: implementation depends_on unit-decomposition AND plan). Backend-only Phase 3: UNIT-001 impacted, UNIT-002 untouched. Handoff written + validated.
+- **Result**: needs_decomposition
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:24:25Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## gate:unit-decomposition
+- **Timestamp**: 2026-08-02T17:24:25Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/unit-decomposition/entry-evidence.md
+- **Result**: pass
+---
+
+## gate:unit-decomposition
+- **Timestamp**: 2026-08-02T17:25:17Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/unit-decomposition/exit-evidence.md
+- **Result**: pass
+---
+
+## unit-decomposition
+- **Timestamp**: 2026-08-02T17:25:17Z
+- **Event**: exit-gate
+- **Actor**: orchestrator
+- **Detail**: Phase 3 decomposition approved (human: 'Approve'). Backend-only; maps onto existing UNIT-001 (REQ-021..025/ADR-017..021), high_impact:true. UNIT-002 out of scope. Handoff validated.
+- **Result**: passed
+---
+
+## gate:plan
+- **Timestamp**: 2026-08-02T17:25:35Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/plan/entry-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:28:50Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## gate:plan
+- **Timestamp**: 2026-08-02T17:29:46Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/plan/exit-evidence.md
+- **Result**: pass
+---
+
+## plan
+- **Timestamp**: 2026-08-02T17:29:46Z
+- **Event**: exit-gate
+- **Actor**: orchestrator
+- **Detail**: Phase 3 plan approved (human: 'Approve'). EPIC-3/FEAT-8 on UNIT-001: US-020/021, EN-9/10/11, TEST-019/020. Inception complete; construction unblocked.
+- **Result**: passed
+---
+
+## approval:implementation
+- **Timestamp**: 2026-08-02T17:30:31Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approval record missing: /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T170000Z/implementation/implementation-entry.yaml
+- **Result**: block
+---
+
+## gate:implementation
+- **Timestamp**: 2026-08-02T17:30:31Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: high-impact action requires user confirmation + durable record
+- **Result**: block
+---
+
+## approval:implementation
+- **Timestamp**: 2026-08-02T17:39:38Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approved via /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T170000Z/implementation/implementation-high-impact.yaml
+- **Result**: approved
+---
+
+## approval:implementation
+- **Timestamp**: 2026-08-02T17:39:38Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approval record missing: /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T170000Z/implementation/implementation-entry.yaml
+- **Result**: block
+---
+
+## gate:implementation
+- **Timestamp**: 2026-08-02T17:39:38Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: high-impact action requires user confirmation + durable record
+- **Result**: block
+---
+
+## approval:implementation
+- **Timestamp**: 2026-08-02T17:39:55Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approved via /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T170000Z/implementation/implementation-high-impact.yaml
+- **Result**: approved
+---
+
+## gate:implementation
+- **Timestamp**: 2026-08-02T17:39:55Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/implementation/entry-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:40:38Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## approval:implementation
+- **Timestamp**: 2026-08-02T17:40:39Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approved via /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T170000Z/implementation/implementation-high-impact.yaml
+- **Result**: approved
+---
+
+## gate:implementation
+- **Timestamp**: 2026-08-02T17:40:39Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/implementation/exit-evidence.md
+- **Result**: pass
+---
+
+## implementation
+- **Timestamp**: 2026-08-02T17:40:39Z
+- **Event**: exit-gate
+- **Actor**: orchestrator
+- **Detail**: UNIT-001 Phase 3 implemented + verified (./mvnw verify BUILD SUCCESS; 31 unit + 5 IT). Two-pass batched createBulk, findExistingCodes, SEQUENCE id, JDBC batching. TEST-019 ≤10 stmts/50 items; TEST-020 contract preserved. Durable high-impact approval 'Confirm'.
+- **Result**: passed
+---
+
+## gate:testing
+- **Timestamp**: 2026-08-02T17:43:37Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/testing/entry-evidence.md
+- **Result**: pass
+---
+
+## gate:testing
+- **Timestamp**: 2026-08-02T17:43:37Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/testing/exit-evidence.md
+- **Result**: pass
+---
+
+## gate:code-review
+- **Timestamp**: 2026-08-02T17:43:37Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/code-review/entry-evidence.md
+- **Result**: pass
+---
+
+## gate:code-review
+- **Timestamp**: 2026-08-02T17:43:37Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/code-review/exit-evidence.md
+- **Result**: pass
+---
+
+## gate:documentation
+- **Timestamp**: 2026-08-02T17:43:37Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/documentation/entry-evidence.md
+- **Result**: pass
+---
+
+## gate:documentation
+- **Timestamp**: 2026-08-02T17:43:37Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/documentation/exit-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:44:11Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: malformed handoff; missing keys: standards_applied policy_evidence risks
+- **Result**: invalid
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:44:11Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: malformed handoff; missing keys: standards_applied policy_evidence risks
+- **Result**: invalid
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:44:11Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: malformed handoff; missing keys: standards_applied policy_evidence risks
+- **Result**: invalid
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:44:36Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:44:36Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:44:36Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## testing
+- **Timestamp**: 2026-08-02T17:44:36Z
+- **Event**: exit-gate
+- **Actor**: orchestrator
+- **Detail**: Phase 3 test plan verified; TEST-019 ≤10 stmts/50 items, TEST-020 contract preserved; full suite green.
+- **Result**: passed
+---
+
+## code-review
+- **Timestamp**: 2026-08-02T17:44:36Z
+- **Event**: exit-gate
+- **Actor**: orchestrator
+- **Detail**: Phase 3 review: CR-016..021, SEC-015..018; no blocking findings; RISK-023 flagged to release-readiness.
+- **Result**: passed
+---
+
+## documentation
+- **Timestamp**: 2026-08-02T17:44:36Z
+- **Event**: exit-gate
+- **Actor**: orchestrator
+- **Detail**: Phase 3 DOC-005 backend README batched-write + short_link_seq operator note; contract unchanged.
+- **Result**: passed
+---
+
+## approval:release-readiness
+- **Timestamp**: 2026-08-02T17:46:08Z
+- **Event**: high-impact-approval
+- **Actor**: approval-check
+- **Detail**: approved via /Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/approvals/run-20260802T170000Z/release-readiness/release-readiness-go.yaml
+- **Result**: approved
+---
+
+## gate:release-readiness
+- **Timestamp**: 2026-08-02T17:46:08Z
+- **Event**: gate-entry
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/release-readiness/entry-evidence.md
+- **Result**: pass
+---
+
+## gate:release-readiness
+- **Timestamp**: 2026-08-02T17:46:08Z
+- **Event**: gate-exit
+- **Actor**: gate-check
+- **Detail**: gate passed; evidence:/Users/gnanasudheergavarraju/Documents/agentic-sdlc-tinyurl/sdlc-docs/policy-evidence/run-20260802T170000Z/release-readiness/exit-evidence.md
+- **Result**: pass
+---
+
+## handoff-validate
+- **Timestamp**: 2026-08-02T17:46:30Z
+- **Event**: handoff-check
+- **Actor**: handoff-validate
+- **Detail**: handoff valid
+- **Result**: valid
+---
+
+## release-readiness
+- **Timestamp**: 2026-08-02T17:46:30Z
+- **Event**: human-approval
+- **Actor**: human
+- **Detail**: Human go/no-go = GO (verbatim 'Go'); releasable, contingent on REL-027/RISK-023 short_link_seq provisioned in prod. Durable approval release-readiness-go.yaml.
+- **Result**: approved
+---
+
+## release-readiness
+- **Timestamp**: 2026-08-02T17:46:30Z
+- **Event**: exit-gate
+- **Actor**: orchestrator
+- **Detail**: Phase 3 release-readiness passed; run releasable; deploy manual/out-of-band (S7). Run run-20260802T170000Z complete.
+- **Result**: passed
+---
+
