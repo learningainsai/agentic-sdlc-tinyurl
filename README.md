@@ -1,14 +1,26 @@
 # agentic-sdlc-tinyurl
 
-An **agentic SDLC orchestrator** built with GitHub Copilot **custom agents, hooks, and skills**.
-It coordinates the full software lifecycle as a governed, non-linear, stateful process — an explicit
-dependency graph with entry/exit gates, human-approval checkpoints, bounded failure recovery,
-compensating actions, and an append-only audit trail.
+This repository is two things at once:
+
+1. An **agentic SDLC orchestrator** built with GitHub Copilot **custom agents, hooks, and skills**.
+   It coordinates the full software lifecycle as a governed, non-linear, stateful process — an
+   explicit dependency graph with entry/exit gates, human-approval checkpoints, bounded failure
+   recovery, compensating actions, and an append-only audit trail.
+2. **TinyURL** — a working **URL-shortener application** (Spring Boot + PostgreSQL backend, Angular
+   frontend) that was designed and built *by* that orchestrator, end to end. TinyURL is the reference
+   product used to exercise the workflow: every requirement, design decision, unit, test, review, and
+   release gate for it was produced through the governed lifecycle and is preserved under
+   `sdlc-docs/`. The application code lives under `tiny-url-creator/`.
+
+In short: the orchestrator is the *how*, and TinyURL is the *what* it produced — greenfield MVP,
+brownfield enhancements, and a performance-optimization phase, all under the same governed process.
 
 > Reference model (not a dependency): [awslabs/aidlc-workflows `core-workflow.md`](https://github.com/awslabs/aidlc-workflows/blob/main/aidlc-rules/aws-aidlc-rules/core-workflow.md).
 > No aidlc extensions are used (those target Kiro IDE).
 
 ## Highlights
+
+### Orchestrator
 
 - **Explicit DAG** with conditional branching, parallel paths, and join synchronization — not linear chaining.
 - **Idea refinement in Inception**: the `idea-refiner` skill challenges the initial idea or draft
@@ -19,6 +31,21 @@ compensating actions, and an append-only audit trail.
 - **Bounded recovery**: retry ≤ 3, then fallback / rollback / safe-stop to the last approved stage; compensating actions for non-reversible effects.
 - **Human decisions** for re-planning, parallel conflicts, and release readiness.
 - **Append-only markdown audit** preserving decision lineage.
+
+### TinyURL product (built on the orchestrator)
+
+- **Shorten URLs** via `POST /api/links` — validated `http(s)` targets, optional **custom alias**, or an
+  auto-generated 7-character Base62 code (`SecureRandom`).
+- **Redirect** via `GET /{code}` → `302 Found` to the original URL (`404` for unknown or expired codes).
+- **Optional link expiry** (`expiresAt`) validated at create and evaluated lazily on resolve; expired
+  aliases stay permanently reserved.
+- **Bulk creation** via `POST /api/links/bulk` (1–100 items) with best-effort, ordered per-item
+  results and per-item error codes.
+- **Abuse protection**: shared per-IP N-token rate limiting (bulk reserves one token per item).
+- **Layered Spring Boot backend** (controller / service / repository / dto / entity) + **Angular SPA**,
+  with JUnit unit/slice/integration tests and Karma/Jasmine frontend specs.
+- **Delivered across three governed phases**: Phase 1 greenfield MVP, Phase 2 expiry + bulk creation,
+  Phase 3 bulk-persistence performance optimization (batched writes) — each with full traceability.
 
 ## Completed Tasks
 
@@ -31,9 +58,26 @@ compensating actions, and an append-only audit trail.
 
 ## TinyURL Project Brief
 
-This repository is prepared to build a URL shortener service from scratch with core APIs,
-analytics, and reliability features. The intended implementation stack is Java, Spring Boot,
-PostgreSQL, Maven, and Docker containers, governed through the agentic SDLC workflow in this repo.
+TinyURL is a **URL-shortener service** delivered from an initial product idea through the agentic SDLC
+workflow in this repo. It is implemented in **Java, Spring Boot, PostgreSQL, Maven, and Docker** (with
+an **Angular** frontend), and its code lives under `tiny-url-creator/`.
+
+What has been built so far, by phase:
+
+- **Phase 1 (greenfield MVP)** — shorten a URL (custom alias or generated Base62 code), `302` redirect
+  on resolve, input validation, and per-IP rate limiting; Spring Boot + PostgreSQL with JUnit and
+  integration tests, documentation, code review, and release-readiness gates.
+- **Phase 2 (brownfield enhancement)** — optional link **expiry** (validated at create, lazily enforced
+  on resolve) and **bulk creation** (`POST /api/links/bulk`, 1–100 items, best-effort ordered per-item
+  results), plus an Angular expiry picker; impacted units re-planned and re-implemented with regression
+  checks.
+- **Phase 3 (performance optimization)** — the ambiguous "improve performance" request was refined into a
+  concrete target and delivered as **batched bulk persistence**: a single existence-check query plus one
+  batched insert (sequence-backed ids, Hibernate JDBC batching), cutting a 50-item bulk from ~100 to
+  ≤10 DB statements with the API contract unchanged.
+
+All of the above was produced and governed end-to-end by the agentic SDLC orchestrator; the generated
+requirements, design, plans, tests, reviews, and approvals are preserved under `sdlc-docs/`.
 
 ## Agentic SDLC Process
 
